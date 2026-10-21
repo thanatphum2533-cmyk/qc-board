@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QC Board — กระดานส่งงานคอนเทนต์ & ตรวจคำผิด</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+            body: ['Sarabun', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body id="board-bg" class="trello-bg-blue min-h-screen flex flex-col font-sans select-none text-slate-800 overflow-hidden">
+
+  <!-- =====================================================================
+       TRELLO TOP GLOBAL NAVBAR
+  ====================================================================== -->
+  <nav class="bg-black/25 backdrop-blur-md border-b border-white/15 px-4 py-2 flex items-center justify-between gap-3 text-white z-30">
+    <!-- Left: Trello Logo & Board Title -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-2.5 py-1.5 rounded-md cursor-pointer transition">
+        <i data-lucide="layout-kanban" class="w-5 h-5 text-white"></i>
+        <span class="font-bold tracking-wide text-sm">QC Board</span>
+      </div>
+
+      <input id="board-title-input" type="text" value="📌 QC Board — กระดานส่งงานคอนเทนต์ & ตรวจคำผิด"
+        onchange="saveBoardTitle(this.value)"
+        class="bg-transparent hover:bg-white/15 focus:bg-white focus:text-slate-900 font-bold text-sm sm:text-base px-2.5 py-1 rounded-md focus:outline-none transition w-72 sm:w-96 truncate" />
+
+      <!-- View Switcher: Board vs Calendar (Like Trello Views) -->
+      <div class="bg-black/25 p-0.5 rounded-lg flex items-center text-xs border border-white/15">
+        <button id="view-btn-board" onclick="switchView('board')" class="px-3 py-1.5 rounded-md font-semibold bg-white text-slate-900 shadow flex items-center gap-1.5 transition">
+          <i data-lucide="kanban" class="w-3.5 h-3.5"></i> กระดาน (Board)
+        </button>
+        <button id="view-btn-calendar" onclick="switchView('calendar')" class="px-3 py-1.5 rounded-md font-medium text-white/85 hover:text-white flex items-center gap-1.5 transition">
+          <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> ปฏิทินคิวโพสต์ (Calendar)
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Search, Role Switch, Background Theme, Dictionary -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Search input -->
+      <div class="relative hidden md:block">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-white/70 absolute left-2.5 top-2"></i>
+        <input id="search-input" type="text" oninput="renderCurrentView()" placeholder="ค้นหาการ์ด / ชื่อน้อง..."
+          class="bg-white/15 hover:bg-white/20 focus:bg-white focus:text-slate-900 placeholder-white/70 focus:placeholder-slate-400 text-xs rounded-md pl-8 pr-3 py-1.5 w-44 focus:w-56 transition focus:outline-none border border-white/20" />
+      </div>
+
+      <!-- Platform Filter -->
+      <select id="filter-platform" onchange="renderCurrentView()" class="bg-white/15 hover:bg-white/25 text-white text-xs rounded-md px-2.5 py-1.5 border border-white/20 focus:outline-none focus:bg-white focus:text-slate-900 cursor-pointer">
+        <option value="ALL" class="text-slate-900">🏷️ ทุกป้ายกำกับ (All Labels)</option>
+        <option value="Facebook" class="text-slate-900">🟦 Facebook</option>
+        <option value="TikTok" class="text-slate-900">⬛ TikTok</option>
+        <option value="IG / Reels" class="text-slate-900">🟪 IG / Reels</option>
+        <option value="YouTube / Shorts" class="text-slate-900">🟥 YouTube / Shorts</option>
+      </select>
+
+      <!-- Role Toggle (Writer vs Manager) -->
+      <div class="bg-black/30 p-0.5 rounded-md border border-white/15 flex items-center text-xs">
+        <button id="role-writer" onclick="setRole('writer')" class="px-2.5 py-1 rounded font-medium transition flex items-center gap-1 bg-amber-400 text-slate-950 shadow">
+          <i data-lucide="user-pen" class="w-3.5 h-3.5"></i> น้องคนเขียน
+        </button>
+        <button id="role-manager" onclick="setRole('manager')" class="px-2.5 py-1 rounded font-medium transition flex items-center gap-1 text-white/80 hover:text-white">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> หัวหน้าตรวจ
+        </button>
+      </div>
+
+      <!-- Thai Typo Dictionary Power-Up -->
+      <button onclick="openDictModal()" class="bg-white/15 hover:bg-white/25 text-white text-xs px-2.5 py-1.5 rounded-md border border-white/20 flex items-center gap-1.5 transition" title="Power-Up: คลังคำมักเขียนผิด">
+        <i data-lucide="spell-check" class="w-4 h-4 text-amber-300"></i>
+        <span class="hidden sm:inline">คลังคำผิด</span> (<span id="dict-count">0</span>)
+      </button>
+
+      <!-- Board Background Picker -->
+      <div class="flex items-center gap-1 bg-black/25 px-2 py-1 rounded-md border border-white/15" title="เปลี่ยนสีพื้นหลังบอร์ด Trello">
+        <button onclick="setBoardTheme('trello-bg-blue')" class="w-4 h-4 rounded-full bg-[#0079bf] border border-white/60 hover:scale-110 transition"></button>
+        <button onclick="setBoardTheme('trello-bg-sky')" class="w-4 h-4 rounded-full bg-[#00aecc] border border-white/60 hover:scale-110 transition"></button>
+        <button onclick="setBoardTheme('trello-bg-purple')" class="w-4 h-4 rounded-full bg-[#89609e] border border-white/60 hover:scale-110 transition"></button>
+        <button onclick="setBoardTheme('trello-bg-green')" class="w-4 h-4 rounded-full bg-[#519839] border border-white/60 hover:scale-110 transition"></button>
+        <button onclick="setBoardTheme('trello-bg-dark')" class="w-4 h-4 rounded-full bg-[#1d2125] border border-white/60 hover:scale-110 transition"></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- =====================================================================
+       TRELLO SUB-BAR (Stats + Quick Action Bar)
+  ====================================================================== -->
+  <div class="bg-black/20 px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-white border-b border-white/10 z-20">
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Team Avatars -->
+      <div class="flex items-center -space-x-1.5 mr-1">
+        <div class="w-6 h-6 rounded-full bg-pink-500 text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white/40" title="น้องมายด์ (Content Writer)">ม</div>
+        <div class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white/40" title="หัวหน้า (Editor/QC)">หน</div>
+      </div>
+
+      <!-- Status Counters -->
+      <span class="bg-rose-600/90 text-white px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> ส่งช้า/เลยกำหนด: <b id="stat-overdue">0</b>
+      </span>
+      <span class="bg-amber-500/90 text-slate-950 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
+        <i data-lucide="eye" class="w-3.5 h-3.5"></i> รอหัวหน้าตรวจ: <b id="stat-review">0</b>
+      </span>
+      <span class="bg-emerald-600/90 text-white px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i> ตั้งเวลาโพสต์แล้ว: <b id="stat-scheduled">0</b>
+      </span>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button id="lan-share-btn" onclick="copyLanUrl()" class="hidden bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 px-2.5 py-0.5 rounded font-semibold text-[11px] flex items-center gap-1 transition" title="คลิกเพื่อคัดลอกลิงก์ส่งให้น้องในออฟฟิศเปิดผ่าน Wi-Fi เดียวกัน">
+        🌐 ลิงก์ออฟฟิศ: <span id="lan-url-text" class="underline font-mono"></span> (คลิกคัดลอก)
+      </button>
+      <span id="current-clock" class="font-mono text-white/95 bg-black/30 px-2.5 py-0.5 rounded text-[11px]"></span>
+      <button onclick="resetDemoData()" class="text-white/75 hover:text-white underline text-[11px]">รีเซ็ตข้อมูลตัวอย่าง</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       VIEW 1: TRELLO KANBAN BOARD (Horizontal Lists + Quick Add Card)
+  ====================================================================== -->
+  <main id="board-view-container" class="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4">
+    <div id="kanban-board" class="flex gap-3.5 h-full items-start">
+      <!-- Trello Lists injected by app.js -->
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       VIEW 2: TRELLO CALENDAR POWER-UP VIEW (Draft vs Publish Schedule)
+  ====================================================================== -->
+  <section id="calendar-view-container" class="hidden flex-1 overflow-y-auto p-4">
+    <div class="max-w-6xl mx-auto bg-white/95 backdrop-blur rounded-xl shadow-2xl border border-white/40 overflow-hidden text-slate-800">
+      <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="calendar-clock" class="w-5 h-5 text-sky-600"></i>
+            ตารางคิวส่งดราฟต์ & คิวลงโพสต์จริง (เรียงตามเวลา)
+          </h2>
+          <p class="text-xs text-slate-500">ช่วยให้ทั้งน้องและหัวหน้าเห็นภาพรวมว่าวันไหนต้องส่งบท วันไหนโพสต์จริง และงานไหนยังไม่ได้ตั้งเวลาโพสต์</p>
+        </div>
+        <button onclick="openCreateModal('idea')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-semibold px-3.5 py-2 rounded-md flex items-center gap-1.5 shadow transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มคิวงานใหม่
+        </button>
+      </div>
+      <div id="calendar-agenda-list" class="divide-y divide-slate-200 p-4 space-y-3">
+        <!-- Populated by renderCalendarView() -->
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       TRELLO CARD BACK MODAL (Full Trello-Style Window)
+  ====================================================================== -->
+  <div id="card-modal" onclick="handleModalBackdropClick(event)" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 hidden items-start justify-center p-2 sm:p-6 overflow-y-auto">
+    <div class="bg-[#f1f2f4] text-slate-800 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden my-4 border border-slate-300">
+
+      <!-- Card Cover Color Strip (Trello Card Cover) -->
+      <div id="modal-cover-strip" class="h-9 bg-gradient-to-r from-[#0079bf] to-[#00aecc] px-4 flex items-center justify-between text-white text-xs">
+        <div class="flex items-center gap-2">
+          <span id="modal-status-badge" class="font-semibold bg-black/25 px-2.5 py-0.5 rounded"></span>
+          <span id="modal-deadline-badge" class="font-medium bg-black/25 px-2.5 py-0.5 rounded"></span>
+        </div>
+        <button onclick="closeCardModal()" class="w-7 h-7 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Card Header (Title + "in list ...") -->
+      <div class="px-6 pt-4 pb-2 flex items-start gap-3">
+        <i data-lucide="credit-card" class="w-5 h-5 text-slate-600 mt-1.5 shrink-0"></i>
+        <div class="flex-1">
+          <input id="modal-title" type="text" placeholder="ชื่อการ์ด / หัวข้อคอนเทนต์..."
+            class="w-full bg-transparent focus:bg-white text-lg sm:text-xl font-bold text-slate-900 rounded px-2 py-1 -ml-2 focus:outline-none focus:ring-2 focus:ring-[#0079bf]" />
+          <p class="text-xs text-slate-500 mt-0.5">
+            อยู่ในลิสต์ <span id="modal-list-name-inline" class="underline font-semibold text-slate-700"></span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Trello 2-Column Card Body (Main Left + Actions Sidebar Right) -->
+      <div class="p-6 pt-3 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT MAIN AREA (8 cols) -->
+        <div class="lg:col-span-8 space-y-5">
+
+          <!-- NEW: News Reference Link & Auto Thumbnail Fetcher -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-sky-200 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="newspaper" class="w-4 h-4 text-[#0079bf]"></i>
+                📰 ลิงก์ข่าว / ต้นทางคอนเทนต์ (วางลิงก์เพื่อโชว์ Thumbnail อัตโนมัติ)
+              </label>
+              <span id="news-fetch-status" class="text-[11px] text-slate-500">วาง URL ข่าวเพื่อให้ระบบดึงรูปปกข่าว</span>
+            </div>
+
+            <div class="flex gap-2">
+              <input id="modal-news-url" type="url"
+                onpaste="setTimeout(() => fetchNewsThumbnailFromInput(), 80)"
+                onchange="fetchNewsThumbnailFromInput()"
+                placeholder="วางลิงก์ข่าวที่นี่ เช่น https://www.thairath.co.th/... หรือ YouTube / Facebook..."
+                class="flex-1 bg-slate-50 focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0079bf] select-text" />
+              <button type="button" onclick="fetchNewsThumbnailFromInput(true)" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0 flex items-center gap-1 shadow-sm transition">
+                <i data-lucide="image" class="w-3.5 h-3.5"></i> ดึง Thumbnail
+              </button>
+            </div>
+
+            <!-- News Thumbnail Preview Card -->
+            <div id="news-preview-box" class="hidden rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+              <div class="grid grid-cols-1 sm:grid-cols-3">
+                <div class="relative bg-slate-900 h-36 sm:h-auto flex items-center justify-center overflow-hidden">
+                  <img id="news-preview-img" src="" alt="News Thumbnail" class="w-full h-full object-cover" onerror="handleThumbImgError(this)" />
+                </div>
+                <div class="sm:col-span-2 p-3 flex flex-col justify-between gap-2">
+                  <div>
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span id="news-preview-domain" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-100 text-sky-800">NEWS</span>
+                      <button type="button" onclick="clearNewsThumbnail()" class="text-[11px] text-rose-600 hover:underline">ลบรูปปก</button>
+                    </div>
+                    <h4 id="news-preview-title" class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug"></h4>
+                  </div>
+                  <div class="flex items-center gap-2 pt-1 flex-wrap">
+                    <a id="news-preview-open" href="#" target="_blank" rel="noopener" class="text-[11px] font-semibold text-[#0079bf] hover:underline flex items-center gap-1">
+                      🔗 เปิดอ่านข่าวต้นฉบับ
+                    </a>
+                    <button type="button" onclick="useNewsTitleAsCardTitle()" class="text-[11px] bg-slate-200 hover:bg-slate-300 text-slate-800 px-2 py-0.5 rounded font-medium transition">
+                      ✨ ใช้ชื่อข่าวเป็นชื่อการ์ด
+                    </button>
+                  </div>
+                  <!-- NEW: Health Page Auto-Generate Script from News Link (Style + Health Angle Picker) -->
+                  <div class="pt-2.5 mt-1.5 border-t border-slate-200 space-y-2 bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-200">
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                      <span class="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                        🩺 สร้างบทจากลิงก์ข่าว + สอดแทรกสาระสุขภาพอัตโนมัติ:
+                      </span>
+                      <select id="health-angle-select" onchange="generateScriptFromNews(currentScriptStyle, true)" class="bg-white border border-emerald-300 rounded px-2 py-1 text-[11px] font-semibold text-emerald-900 focus:outline-none">
+                        <option value="general">🌿 มุมสุขภาพ: การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
+                        <option value="food">🥗 มุมสุขภาพ: โภชนาการ / การเลือกกินอาหาร</option>
+                        <option value="sleep_stress">😴 มุมสุขภาพ: การนอน / ความเครียด / วัยทำงาน</option>
+                        <option value="immunity">🛡️ มุมสุขภาพ: เสริมภูมิคุ้มกัน / ชะลอวัย / ผู้สูงอายุ</option>
+                        <option value="product">💊 มุมสุขภาพ: สอดแทรกตัวช่วย/ผลิตภัณฑ์ของเพจ</option>
+                      </select>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button type="button" onclick="generateScriptFromNews('health_alert')" class="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                        🚨 1. สไตล์เตือนภัย/อุทาหรณ์สุขภาพ
+                      </button>
+                      <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                        🥗 2. สไตล์เคล็ดลับดูแลตัวเอง (How-to)
+                      </button>
+                      <button type="button" onclick="generateScriptFromNews('myth_fact')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                        🧠 3. สไตล์ไขข้อข้องใจสุขภาพ (รู้หรือไม่)
+                      </button>
+                      <button type="button" onclick="generateScriptFromNews('soft_sell')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition">
+                        💊 4. สไตล์ขยี้ข่าว + โยงเข้าสินค้าสุขภาพ
+                      </button>
+                      <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                        📋 5. แคปชั่นโพสต์สรุปสาระ (แชร์ต่อได้)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Labels, Members, Content Type Row (Trello Meta Row) -->
+          <div class="flex flex-wrap gap-4 bg-white p-3.5 rounded-lg shadow-sm border border-slate-200">
+            <!-- Labels / Platforms -->
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1.5">📺 ช่องทางที่จะลง & เช็คสถานะลงแล้ว (ช่อง 1, 2, 3...)</label>
+              <div id="modal-platforms" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Assignee & Format -->
+            <div class="flex gap-2 items-end">
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">👤 ผู้รับผิดชอบ</label>
+                <input id="modal-assignee" type="text" placeholder="เช่น น้องมายด์"
+                  class="bg-slate-100 border border-slate-300 rounded px-2.5 py-1 text-xs font-medium text-slate-800 w-28 focus:bg-white focus:outline-none focus:border-[#0079bf]" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">🎬 รูปแบบชิ้นงาน</label>
+                <select id="modal-content-type" class="bg-slate-100 border border-slate-300 rounded px-2 py-1 text-xs font-medium text-slate-800 focus:bg-white focus:outline-none">
+                  <option value="คลิปสั้น (Reels/TikTok)">🎬 คลิปสั้น (Reels/TikTok)</option>
+                  <option value="โพสต์ภาพเดี่ยว/อัลบั้ม">🖼️ โพสต์รูปภาพ/อัลบั้ม</option>
+                  <option value="บทความ/แคปชั่นยาว">📝 บทความ/แคปชั่น</option>
+                  <option value="คลิปยาว YouTube">📺 คลิปยาว YouTube</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dual Dates Section (Draft Deadline vs Publish Time) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-amber-50 border border-amber-300 rounded-lg p-3 shadow-sm">
+              <label class="block text-xs font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                <i data-lucide="clock-alert" class="w-4 h-4 text-amber-600"></i>
+                1. กำหนดส่งดราฟต์บท (Draft Due Date)
+              </label>
+              <input id="modal-draft-deadline" type="datetime-local"
+                class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              <p class="text-[11px] text-amber-700 mt-1">*ต้องส่งบทให้ตรวจก่อนเวลานี้ (ห้ามดองงานไว้ทำวันโพสต์)</p>
+            </div>
+
+            <div class="bg-sky-50 border border-sky-300 rounded-lg p-3 shadow-sm">
+              <label class="block text-xs font-bold text-sky-900 mb-1 flex items-center gap-1.5">
+                <i data-lucide="calendar-check-2" class="w-4 h-4 text-sky-600"></i>
+                2. เวลาลงโพสต์จริง (Publish Date)
+              </label>
+              <input id="modal-publish-time" type="datetime-local"
+                class="w-full bg-white border border-sky-300 rounded px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <p class="text-[11px] text-sky-700 mt-1">*เวลาที่ต้องตั้ง Schedule ล่วงหน้าให้โพสต์ขึ้นอัตโนมัติ</p>
+            </div>
+          </div>
+
+          <!-- Trello Description + Real-Time Thai Typo Scanner -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <i data-lucide="align-left" class="w-4 h-4 text-slate-600"></i>
+                <h3 class="text-sm font-bold text-slate-800">รายละเอียดบท / สคริปต์เพจสุขภาพ (พร้อมระบบตรวจคำผิด 3 ชั้น)</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="char-counter" class="text-xs text-slate-500">0 ตัวอักษร</span>
+                <button type="button" onclick="autoFixAllTypos()" id="btn-autofix" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2.5 py-1 rounded font-semibold flex items-center gap-1 shadow transition">
+                  <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> แก้คำผิดทั้งหมดอัตโนมัติ
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Health Script Style Toolbar (Always visible above script textarea) -->
+            <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-2.5 space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <span class="text-xs font-bold text-emerald-900">🩺 ให้ระบบร่างบทสุขภาพอัตโนมัติ (เลือกมุมสุขภาพ + สไตล์บท):</span>
+                <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-emerald-300 rounded px-2 py-1 text-xs font-semibold text-emerald-900 focus:outline-none">
+                  <option value="general">🌿 มุมสุขภาพ: ดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
+                  <option value="food">🥗 มุมสุขภาพ: โภชนาการ / อาหารการกิน</option>
+                  <option value="sleep_stress">😴 มุมสุขภาพ: การนอน / ความเครียด / วัยทำงาน</option>
+                  <option value="immunity">🛡️ มุมสุขภาพ: ภูมิคุ้มกัน / ชะลอวัย / ผู้สูงอายุ</option>
+                  <option value="product">💊 มุมสุขภาพ: สอดแทรกตัวช่วย/ผลิตภัณฑ์ของเพจ</option>
+                </select>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="generateScriptFromNews('health_alert')" class="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                  🚨 1. เตือนภัย/อุทาหรณ์สุขภาพ
+                </button>
+                <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                  🥗 2. เคล็ดลับดูแลตัวเอง (How-to)
+                </button>
+                <button type="button" onclick="generateScriptFromNews('myth_fact')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                  🧠 3. ไขข้อข้องใจ (รู้หรือไม่)
+                </button>
+                <button type="button" onclick="generateScriptFromNews('soft_sell')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition">
+                  💊 4. ขยี้ข่าว + โยงเข้าสินค้าสุขภาพ
+                </button>
+                <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
+                  📋 5. แคปชั่นสรุปสาระ (แชร์ต่อได้)
+                </button>
+              </div>
+            </div>
+
+            <textarea id="modal-script" rows="6" oninput="runTypoCheck()"
+              placeholder="พิมพ์บทคอนเทนต์ สคริปต์คลิป หรือแคปชั่นที่นี่... ระบบจะเช็คคำผิดให้อัตโนมัติ (เช่น นะค่ะ, สวัสดีคะ, โพส, คอนเท้น, อัพเดท, ลิ้งค์ ฯลฯ)"
+              class="w-full bg-slate-50 focus:bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-800 font-body leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0079bf] select-text"></textarea>
+
+            <!-- Typo Scanner Result Box -->
+            <div id="typo-alert-box" class="rounded-lg p-3 border text-xs transition"></div>
+          </div>
+
+          <!-- Trello Checklist Section -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="check-square" class="w-4 h-4 text-slate-600"></i>
+                <h3 class="text-sm font-bold text-slate-800">Checklist ตรวจทานก่อนส่งงาน (บังคับติ๊กครบ)</h3>
+              </div>
+              <span id="checklist-progress-text" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">0%</span>
+            </div>
+
+            <!-- Trello Progress Bar -->
+            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div id="checklist-progress-bar" class="bg-[#0079bf] h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <div id="modal-checklist" class="space-y-1.5"></div>
+
+            <!-- Add Custom Checklist Item (Like Trello "Add an item") -->
+            <div class="flex gap-2 pt-1">
+              <input id="new-checklist-input" type="text" placeholder="เพิ่มรายการตรวจเช็คใหม่ (Add an item)..."
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addChecklistItem();}"
+                class="flex-1 bg-slate-100 focus:bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-[#0079bf]" />
+              <button type="button" onclick="addChecklistItem()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded transition">
+                + เพิ่มข้อเช็ค
+              </button>
+            </div>
+          </div>
+
+          <!-- Trello Attachments: Schedule Proof -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="paperclip" class="w-4 h-4 text-slate-600"></i>
+              <h3 class="text-sm font-bold text-slate-800">แนบหลักฐานการตั้งเวลาโพสต์ล่วงหน้า (Attachments / Schedule Proof)</h3>
+            </div>
+            <p class="text-xs text-slate-500">
+              *บังคับก่อนย้ายไปช่อง <b>"ตั้งเวลาโพสต์แล้ว"</b>: ให้น้องตั้งเวลาโพสต์ใน Meta Business Suite / TikTok Studio แล้ววางลิงก์หรือแนบรูปแคปหน้าจอตรงนี้ (ห้ามรอไปกดโพสต์เองตามเวลาจริง)
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">🔗 ลิงก์โพสต์ หรือ หมายเหตุเวลาที่ตั้งไว้</label>
+                <input id="modal-schedule-link" type="text" oninput="syncAndRefreshActions()" placeholder="เช่น ตั้งเวลาใน Meta Business Suite แล้ว"
+                  class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#0079bf]" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">📸 อัปโหลดรูปแคปจอที่ตั้งเวลาโพสต์แล้ว</label>
+                <input id="modal-schedule-image" type="file" accept="image/*" onchange="handleProofImageUpload(event)"
+                  class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#0079bf]/15 file:text-[#0079bf] hover:file:bg-[#0079bf]/25 cursor-pointer" />
+              </div>
+            </div>
+            <div id="proof-image-preview-container" class="hidden pt-2">
+              <div class="relative inline-block bg-slate-100 p-2 rounded-lg border border-slate-300">
+                <img id="proof-image-preview" src="" alt="Schedule Proof" class="max-h-40 rounded" />
+                <button type="button" onclick="removeProofImage()" class="absolute top-3 right-3 bg-rose-600 text-white rounded-full p-1 text-xs shadow hover:bg-rose-500">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT SIDEBAR ACTIONS (4 cols - Trello Card Actions Style) -->
+        <div class="lg:col-span-4 space-y-4">
+
+          <!-- Gatekeeper Action Box -->
+          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">การส่งงาน (Move Card)</h4>
+
+            <!-- Gatekeeper Lock Alert -->
+            <div id="gatekeeper-warning" class="hidden bg-rose-50 border border-rose-300 text-rose-800 rounded-lg p-2.5 text-xs space-y-1"></div>
+
+            <div id="workflow-buttons" class="space-y-2"></div>
+          </div>
+
+          <!-- Manager Review / Revision Box -->
+          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <i data-lucide="message-square-more" class="w-3.5 h-3.5 text-amber-600"></i>
+              ตรวจงาน / คอมเมนต์จากหัวหน้า
+            </h4>
+            <textarea id="modal-feedback" rows="3" placeholder="เขียนคอมเมนต์ให้น้องแก้ไข หรือโน้ตเพิ่มเติม..."
+              class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-amber-500 select-text"></textarea>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="rejectCardWithFeedback()" class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 text-xs py-2 rounded font-semibold flex items-center justify-center gap-1 transition">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> ตีกลับให้แก้
+              </button>
+              <button type="button" onclick="approveCardFromReview()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 rounded font-semibold flex items-center justify-center gap-1 shadow-sm transition">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> อนุมัติบท
+              </button>
+            </div>
+          </div>
+
+          <!-- Share / Export Actions -->
+          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Actions</h4>
+            <button type="button" onclick="copyCardForTrelloOrLine()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-600"></i> คัดลอกสรุปส่งเข้า LINE กลุ่ม
+            </button>
+            <button type="button" onclick="duplicateCurrentCard()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
+              <i data-lucide="files" class="w-3.5 h-3.5 text-slate-600"></i> คัดลอกการ์ดใบนี้ (Copy Card)
+            </button>
+            <button type="button" onclick="deleteCurrentCard()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบการ์ดนี้ (Delete)
+            </button>
+          </div>
+
+          <!-- Activity Log (Trello Activity) -->
+          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <i data-lucide="activity" class="w-3.5 h-3.5"></i> ประวัติกิจกรรม (Activity)
+            </h4>
+            <div id="modal-history" class="space-y-1.5 max-h-44 overflow-y-auto text-[11px] text-slate-600"></div>
+          </div>
+
+          <!-- Save Button -->
+          <button type="button" onclick="saveCardModal(true)" class="w-full bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-bold py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i> บันทึกและปิดหน้าต่าง
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 2: CUSTOM THAI TYPO DICTIONARY POWER-UP
+  ====================================================================== -->
+  <div id="dict-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white text-slate-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="px-6 py-4 bg-[#0079bf] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="spell-check" class="w-5 h-5 text-amber-300"></i>
+          <h2 class="text-base font-bold">QC Board: คลังคำมักเขียนผิด & คำต้องห้ามของออฟฟิศ</h2>
+        </div>
+        <button onclick="closeDictModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <p class="text-xs text-slate-600">
+          เมื่อน้องพิมพ์บทในการ์ด ระบบจะสแกนหาคำผิดจากคลังนี้ทันที หากเจอคำผิด ปุ่มส่งงานให้หัวหน้าจะถูกล็อกอัตโนมัติ คุณสามารถเพิ่มคำที่น้องชอบสะกดผิดบ่อยๆ หรือชื่อสินค้าได้ด้านล่างเลยครับ
+        </p>
+
+        <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input id="new-typo-wrong" type="text" placeholder="คำที่มักพิมพ์ผิด (เช่น นะค่ะ)" class="bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-800" />
+          <input id="new-typo-right" type="text" placeholder="คำที่ถูกต้อง (เช่น นะคะ)" class="bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-800" />
+          <button onclick="addCustomTypoRule()" class="bg-[#0079bf] hover:bg-[#026aa7] text-white font-semibold text-xs rounded px-3 py-2 transition flex items-center justify-center gap-1">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มคำตรวจจับ
+          </button>
+        </div>
+
+        <div id="dict-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2.5 text-xs border border-white/15">
+    <i data-lucide="bell" class="w-4 h-4 text-sky-400"></i>
+    <span id="toast-msg">บันทึกสำเร็จ</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

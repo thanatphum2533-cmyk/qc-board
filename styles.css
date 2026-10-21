@@ -1,0 +1,87 @@
+/* Trello Authentic Backgrounds & List Styling */
+.trello-bg-blue {
+  background: linear-gradient(135deg, #0079bf 0%, #005c91 100%);
+}
+
+.trello-bg-sky {
+  background: linear-gradient(135deg, #00aecc 0%, #0079bf 100%);
+}
+
+.trello-bg-purple {
+  background: linear-gradient(135deg, #89609e 0%, #513b6b 100%);
+}
+
+.trello-bg-green {
+  background: linear-gradient(135deg, #519839 0%, #2d621d 100%);
+}
+
+.trello-bg-dark {
+  background: linear-gradient(135deg, #1d2125 0%, #101214 100%);
+}
+
+/* Custom Scrollbars (Trello Board Horizontal Scroll) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* Inside Trello List Scrollbar */
+.trello-list-cards::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trello-list-cards::-webkit-scrollbar-track {
+  background: rgba(9, 30, 66, 0.06);
+}
+
+.trello-list-cards::-webkit-scrollbar-thumb {
+  background: rgba(9, 30, 66, 0.22);
+}
+
+/* Trello List Column (#f1f2f4 authentic Trello list color) */
+.trello-list {
+  width: 295px;
+  min-width: 295px;
+  max-height: calc(100vh - 118px);
+  background-color: #f1f2f4;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(9, 30, 66, 0.25);
+}
+
+/* Trello White Card */
+.trello-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+}
+
+.trello-card:hover {
+  background-color: #f8fafc;
+  box-shadow: 0 4px 8px -2px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+}
+
+.trello-card.dragging {
+  opacity: 0.5;
+  transform: rotate(3deg) scale(0.98);
+}
+
+.drop-zone-active {
+  outline: 2px dashed #0079bf;
+  outline-offset: -3px;
+  background-color: #e4f0f6 !important;
+}

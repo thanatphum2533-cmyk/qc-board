@@ -1,0 +1,10 @@
+{
+  "name": "content-qc-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QC Board — กระดานส่งงานคอนเทนต์เพจสุขภาพ & ระบบตรวจคำผิด 3 ชั้นอัตโนมัติ (รองรับ Vercel)",
+  "scripts": {
+    "start": "python server.py"
+  }
+}
