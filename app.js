@@ -1996,6 +1996,7 @@ async function submitQuickAddCard(colId) {
     newsThumb: normalizedUrl ? makeNewsSvgThumb('กำลังดึงรูปปก...', extractDomain(normalizedUrl)) : '',
     draftDeadline: offsetDateTimeLocal(18),
     publishTime: offsetDateTimeLocal(42),
+    ideaNotes: '',
     script: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
@@ -2196,6 +2197,7 @@ function openCreateModal(defaultStatus = 'idea_review') {
     newsThumb: '',
     draftDeadline: offsetDateTimeLocal(18),
     publishTime: offsetDateTimeLocal(42),
+    ideaNotes: '',
     script: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
@@ -2247,6 +2249,11 @@ function openCardModal(cardId) {
   document.getElementById('modal-news-url').value = card.newsUrl || '';
   document.getElementById('news-fetch-status').textContent = card.newsThumb ? 'แสดง Thumbnail ข่าวอยู่' : 'วางลิงก์เพื่อดึงภาพปกและหัวข้อข่าวอัตโนมัติ';
 
+  const ideaNotesEl = document.getElementById('modal-idea-notes');
+  if (ideaNotesEl) {
+    ideaNotesEl.value = card.ideaNotes || (card.script && card.script.length < 250 && !card.script.includes('📍') ? card.script : '');
+  }
+
   tempNewsData = {
     url: card.newsUrl || '',
     thumb: card.newsThumb || '',
@@ -2286,7 +2293,7 @@ function openCardModal(cardId) {
   renderProofImagePreview();
   runTypoCheck();
   renderWorkflowActionButtons(card);
-  updateScheduleSectionVisibility(card);
+  updateCardModalStageVisibility(card);
   renderHistoryLog(card);
   updateActiveUserBadge();
 
@@ -2434,21 +2441,50 @@ function renderProofImagePreview() {
   }
 }
 
-function updateScheduleSectionVisibility(card) {
-  const scheduleSection = document.getElementById('modal-schedule-section');
-  if (!scheduleSection) return;
+function updateCardModalStageVisibility(card) {
+  const ideaSec = document.getElementById('modal-idea-section');
+  const scriptSec = document.getElementById('modal-script-section');
+  const checklistSec = document.getElementById('modal-checklist-section');
+  const scheduleSec = document.getElementById('modal-schedule-section');
 
-  // Schedule Post section strictly belongs to stage "6. รอลง (ตั้งเวลาโพสต์)" (waiting_post) and "7. ลงแล้ว" (posted)
-  const isPostStage = card && (card.status === 'waiting_post' || card.status === 'posted');
-  if (isPostStage) {
-    scheduleSection.classList.remove('hidden');
-  } else {
-    scheduleSection.classList.add('hidden');
+  const status = card ? card.status : 'idea_review';
+
+  // 1. Stage 1: "1. ไอเดีย (รอตรวจ)" (idea_review)
+  // Only show Idea Concept & News preview. Hide Script Editor, Typo Checker, QC Checklist, and Schedule.
+  if (status === 'idea_review') {
+    if (ideaSec) ideaSec.classList.remove('hidden');
+    if (scriptSec) scriptSec.classList.add('hidden');
+    if (checklistSec) checklistSec.classList.add('hidden');
+    if (scheduleSec) scheduleSec.classList.add('hidden');
+  }
+  // 2. Stage 2: "2. เขียนบท" (writing)
+  // Show full Script Generator & Editor. QC Checklist is not needed yet until Stage 3.
+  else if (status === 'writing') {
+    if (ideaSec) ideaSec.classList.add('hidden');
+    if (scriptSec) scriptSec.classList.remove('hidden');
+    if (checklistSec) checklistSec.classList.add('hidden');
+    if (scheduleSec) scheduleSec.classList.add('hidden');
+  }
+  // 3. Stage 3, 4, 5: "3. บทเสร็จ (รอตรวจ)", "4. บทสมบูรณ์", "5. ตัดเสร็จ (รอตรวจ)"
+  // Show Script & QC Checklist (as requested: "ต้องเอาไว้ในการ์ด 3")
+  else if (status === 'script_review' || status === 'script_done' || status === 'edit_review') {
+    if (ideaSec) ideaSec.classList.add('hidden');
+    if (scriptSec) scriptSec.classList.remove('hidden');
+    if (checklistSec) checklistSec.classList.remove('hidden');
+    if (scheduleSec) scheduleSec.classList.add('hidden');
+  }
+  // 4. Stage 6 & 7: "6. รอลง (ตั้งเวลาโพสต์)" & "7. ลงแล้ว"
+  // Show Script, Checklist, and Schedule Post & Proof
+  else if (status === 'waiting_post' || status === 'posted') {
+    if (ideaSec) ideaSec.classList.add('hidden');
+    if (scriptSec) scriptSec.classList.remove('hidden');
+    if (checklistSec) checklistSec.classList.remove('hidden');
+    if (scheduleSec) scheduleSec.classList.remove('hidden');
   }
 }
 
 function renderWorkflowActionButtons(card) {
-  updateScheduleSectionVisibility(card);
+  updateCardModalStageVisibility(card);
   const container = document.getElementById('workflow-buttons');
   if (!container) return;
   container.innerHTML = '';
@@ -2556,6 +2592,7 @@ function syncModalFieldsToCardObject() {
   card.contentType = document.getElementById('modal-content-type').value;
   card.draftDeadline = newDraftDl;
   card.publishTime = newPubTime;
+  card.ideaNotes = document.getElementById('modal-idea-notes')?.value || card.ideaNotes || '';
   card.script = newScript;
   card.scheduleLink = document.getElementById('modal-schedule-link').value.trim();
   card.feedback = newFeedback;

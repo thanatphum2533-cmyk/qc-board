@@ -341,8 +341,25 @@
             </div>
           </div>
 
+          <!-- 1.5 Idea Concept Section (สำหรับขั้นตอน 1. ไอเดีย (รอตรวจ) โดยเฉพาะ) -->
+          <div id="modal-idea-section" class="hidden rounded-lg border border-zinc-200 bg-white p-4 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-700">แนวคิดไอเดีย & บันทึกประเด็นคอนเทนต์ (Idea Concept)</h3>
+              </div>
+              <span class="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">ขั้นตอน 1. ไอเดีย (รอตรวจ)</span>
+            </div>
+            <textarea id="modal-idea-notes" rows="4" oninput="syncModalFieldsToCardObject()"
+              placeholder="ระบุแนวคิดสั้นๆ มุมมองที่น่าสนใจ หรือเหตุผลที่เลือกประเด็นนี้ เพื่อส่งให้หัวหน้าพิจารณาอนุมัติไอเดีย..."
+              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg p-3 text-xs text-zinc-800 leading-relaxed focus:outline-none focus:border-zinc-400 select-text"></textarea>
+            <p class="text-[11px] text-zinc-400 leading-relaxed">
+              💡 เมื่อหัวหน้าอนุมัติไอเดียและย้ายไปขั้นตอน <b>"2. เขียนบท"</b> โครงสร้างบทและเครื่องมือร่างบทจะเปิดให้ใช้งานทันที
+            </p>
+          </div>
+
           <!-- 2. Script Editor + Health Angle Studio Bar + 3-Layer Thai Proofreader -->
-          <div class="space-y-3">
+          <div id="modal-script-section" class="space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <i data-lucide="file-text" class="w-4 h-4 text-zinc-500"></i>
@@ -405,8 +422,8 @@
             <div id="typo-alert-box" class="rounded-lg p-3 border text-xs transition"></div>
           </div>
 
-          <!-- 3. Quality Checklist Section -->
-          <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
+          <!-- 3. Quality Checklist Section (แสดงตั้งแต่ขั้นตอน 3. บทเสร็จ (รอตรวจ) เป็นต้นไป) -->
+          <div id="modal-checklist-section" class="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <i data-lucide="list-checks" class="w-4 h-4 text-zinc-500"></i>
