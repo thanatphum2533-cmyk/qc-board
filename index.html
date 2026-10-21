@@ -80,9 +80,15 @@
       </div>
 
       <!-- Thai Typo Dictionary Power-Up -->
-      <button onclick="openDictModal()" class="bg-white/15 hover:bg-white/25 text-white text-xs px-2.5 py-1.5 rounded-md border border-white/20 flex items-center gap-1.5 transition" title="Power-Up: คลังคำมักเขียนผิด">
+      <button onclick="openDictModal()" class="bg-white/15 hover:bg-white/25 text-white text-xs px-2.5 py-1.5 rounded-md border border-white/20 flex items-center gap-1.5 transition" title="คลังคำมักเขียนผิด">
         <i data-lucide="spell-check" class="w-4 h-4 text-amber-300"></i>
         <span class="hidden sm:inline">คลังคำผิด</span> (<span id="dict-count">0</span>)
+      </button>
+
+      <!-- How to Use QC Board Tutorial Modal Button -->
+      <button onclick="openGuideModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-md shadow flex items-center gap-1 transition" title="คู่มือสอนใช้งาน QC Board ทีละขั้นตอน">
+        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+        <span>สอนใช้ QC Board</span>
       </button>
 
       <!-- Board Background Picker -->
@@ -529,6 +535,62 @@
         </div>
 
         <div id="dict-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 3: INTERACTIVE TUTORIAL / สอนใช้ QC BOARD
+  ====================================================================== -->
+  <div id="guide-modal" onclick="if(event.target.id==='guide-modal')closeGuideModal()" class="fixed inset-0 bg-black/65 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white text-slate-800 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+      <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-[#0079bf] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="graduation-cap" class="w-6 h-6 text-amber-300"></i>
+          <div>
+            <h2 class="text-base font-bold">🎓 คู่มือสอนใช้งาน QC Board (เพจสุขภาพ) ทีละขั้นตอน</h2>
+            <p class="text-xs text-white/85">สรุปขั้นตอนตั้งแต่หาลิงก์ข่าว ➡️ เขียนบทอัตโนมัติ ➡️ ตรวจคำผิด 3 ชั้น ➡️ เช็คลงช่อง 1, 2, 3</p>
+          </div>
+        </div>
+        <button onclick="closeGuideModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 text-xs leading-relaxed">
+        <!-- Step 1 -->
+        <div class="bg-sky-50 border border-sky-200 rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold text-sky-900">1️⃣ ขั้นตอนที่ 1: หาข่าว & วางลิงก์ให้โชว์รูปปก (ช่อง "1. ไอเดีย รอตรวจ" — ก่อน 10:30 น.)</div>
+          <p class="text-slate-700">• กดปุ่ม <b>"+ เพิ่มการ์ด / วางลิงก์ข่าว"</b> ท้ายช่องที่ 1 แล้ววางลิงก์ข่าว (เช่น Thairath, Sanook, Hfocus, YouTube) ลงไปได้เลย</p>
+          <p class="text-slate-700">• ระบบจะ <b>ดึงรูปปกข่าว (Thumbnail) และหัวข้อข่าว</b> ขึ้นมาโชว์บนหัวการ์ดให้อัตโนมัติ รอหัวหน้ากดอนุมัติหัวข้อก่อนไปเขียนบท</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold text-emerald-900">2️⃣ ขั้นตอนที่ 2: ให้ระบบร่างบทสุขภาพอัตโนมัติ (ช่อง "2. เขียนบท")</div>
+          <p class="text-slate-700">• คลิกเปิดการ์ดขึ้นมา ➡️ เลือก <b>"🌿 มุมสุขภาพ"</b> (เช่น โภชนาการ, การนอน, ภูมิคุ้มกัน, หรือโยงเข้าสินค้าเพจ)</p>
+          <p class="text-slate-700">• กดปุ่มเลือก <b>"🎬 สไตล์บท 1-5"</b> (เช่น เตือนภัยสุขภาพ, เคล็ดลับดูแลตัวเอง, ไขข้อข้องใจ, ขยี้ข่าวโยงสินค้า, หรือแคปชั่นสรุปสาระ)</p>
+          <p class="text-slate-700">• ระบบจะเขียนโครงบทพร้อมสอดแทรกความรู้สุขภาพให้ทันที แล้วให้น้องปรับแต่งคำพูดเพิ่มเติมตามต้องการ</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold text-rose-900">3️⃣ ขั้นตอนที่ 3: ตรวจคำผิด 3 ชั้น & ส่งตรวจบท (ช่อง "3. บทเสร็จ" & "4. บทสมบูรณ์" — ก่อน 13:30 น.)</div>
+          <p class="text-slate-700">• ระบบจะสแกนบทอัตโนมัติ 3 ชั้น: <b>1. คำสะกดผิด/ศัพท์สุขภาพ</b> (เช่น คอเลสเตอรอล, ศีรษะ, นะคะ) <b>2. คำซ้ำติดกัน</b> และ <b>3. คำไม่ถูกบริบทประโยคคำถาม</b></p>
+          <p class="text-slate-700">• หากพบจุดผิด ปุ่มส่งงานจะถูกล็อก 🔒 ให้กดปุ่มสีเขียว <b>"✨ แก้คำผิดทั้งหมดอัตโนมัติ"</b> เมื่อขึ้นสีเขียวไร้คำผิดแล้ว จึงกดส่งเข้าช่องที่ 3 เพื่อให้หัวหน้าตรวจและย้ายเข้า <b>"4. บทสมบูรณ์"</b></p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold text-amber-900">4️⃣ ขั้นตอนที่ 4: ตัดเสร็จ รอตรวจ ➡️ ตั้งเวลาโพสต์ ➡️ ติ๊กเช็ค ช่อง 1, 2, 3 (ก่อน 17:30 น.)</div>
+          <p class="text-slate-700">• เมื่อตัดคลิปเสร็จ ให้นำลิงก์คลิปมาวางในการ์ดแล้วส่งเข้าช่อง <b>"5. ตัดเสร็จ (รอตรวจ)"</b></p>
+          <p class="text-slate-700">• เมื่อคลิปผ่านแล้ว ให้ไปตั้งเวลาโพสต์ล่วงหน้า (Schedule) ในแพลตฟอร์ม แนบรูปแคปจอที่ตั้งเวลาแล้ว ย้ายไปช่อง <b>"6. รอลง"</b></p>
+          <p class="text-slate-700">• เมื่อโพสต์ขึ้นแต่ละช่องแล้ว ให้คลิกติ๊กปุ่ม <b>"✅ ช่อง 1" "✅ ช่อง 2" "✅ ช่อง 3"</b> บนหน้าการ์ดให้เป็นสีเขียวครบทุกช่อง!</p>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-100 border-t border-slate-200 flex justify-end">
+        <button onclick="closeGuideModal()" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-bold px-5 py-2 rounded-lg shadow">
+          เข้าใจแล้ว เริ่มใช้งานเลย!
+        </button>
       </div>
     </div>
   </div>

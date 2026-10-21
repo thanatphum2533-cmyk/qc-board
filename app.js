@@ -2165,6 +2165,21 @@ function closeDictModal() {
   m.classList.remove('flex');
 }
 
+function openGuideModal() {
+  const m = document.getElementById('guide-modal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  lucide.createIcons();
+}
+
+function closeGuideModal() {
+  const m = document.getElementById('guide-modal');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
 function renderDictList() {
   const container = document.getElementById('dict-list');
   container.innerHTML = '';
