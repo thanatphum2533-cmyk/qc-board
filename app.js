@@ -130,6 +130,7 @@ let activeMember = null;
 let currentView = 'board';
 let activeCardId = null;
 let tempProofImageData = '';
+let tempWordFileData = null;
 let tempNewsData = { url: '', thumb: '', title: '', domain: '', description: '' };
 let currentScriptStyle = 'health_alert';
 let currentHealthAngle = 'general';
@@ -1920,6 +1921,14 @@ function createTrelloCardElement(card) {
     typoBadgeHtml = `<span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded">ผ่านตรวจคำผิด</span>`;
   }
 
+  // Word Document Badge
+  let wordBadgeHtml = '';
+  if (card.wordFile) {
+    wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ไฟล์ Word: ${escapeHtml(card.wordFile.name)}"><i data-lucide="file-text" class="w-2.5 h-2.5 text-blue-600"></i> Word</span>`;
+  } else if (card.wordLink) {
+    wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ลิงก์ Docs: ${escapeHtml(card.wordLink)}"><i data-lucide="link" class="w-2.5 h-2.5 text-blue-600"></i> Docs</span>`;
+  }
+
   const assigneeName = card.assignee || 'ไม่ระบุ';
   const initial = assigneeName.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
 
@@ -1935,6 +1944,7 @@ function createTrelloCardElement(card) {
       </div>
       <div class="pt-2 flex items-center justify-between gap-1 border-t border-zinc-100">
         <div class="flex items-center gap-1.5 flex-wrap">
+          ${wordBadgeHtml}
           ${typoBadgeHtml}
           <span class="font-mono text-[10px] px-1 py-0.2 rounded ${doneCheck === totalCheck && totalCheck > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' : 'text-zinc-500'}">
             ${doneCheck}/${totalCheck}
@@ -1998,6 +2008,8 @@ async function submitQuickAddCard(colId) {
     publishTime: offsetDateTimeLocal(42),
     ideaNotes: '',
     script: '',
+    wordFile: null,
+    wordLink: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2199,6 +2211,8 @@ function openCreateModal(defaultStatus = 'idea_review') {
     publishTime: offsetDateTimeLocal(42),
     ideaNotes: '',
     script: '',
+    wordFile: null,
+    wordLink: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2286,11 +2300,15 @@ function openCardModal(cardId) {
   tempChannels = card.channels.map(ch => ({ ...ch }));
   tempChecklist = (card.checklist || DEFAULT_CHECKLIST).map(c => ({ ...c }));
   tempProofImageData = card.scheduleImage || '';
+  tempWordFileData = card.wordFile || null;
+  const wordLinkEl = document.getElementById('modal-word-link');
+  if (wordLinkEl) wordLinkEl.value = card.wordLink || '';
 
   renderModalNewsPreview();
   renderModalChannels();
   renderModalChecklist();
   renderProofImagePreview();
+  renderWordFilePreview();
   runTypoCheck();
   renderWorkflowActionButtons(card);
   updateCardModalStageVisibility(card);
@@ -2439,6 +2457,180 @@ function renderProofImagePreview() {
     img.src = '';
     container.classList.add('hidden');
   }
+}
+
+// ============================================================================
+// WORD DOCUMENT ATTACHMENT & TEXT EXTRACTION (.docx, .doc, Google Docs link)
+// ============================================================================
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+async function handleWordFileUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('⚠️ ไฟล์ Word มีขนาดเกิน 8MB แนะนำให้ใช้วิธีวางลิงก์ Google Docs หรือ OneDrive');
+    event.target.value = '';
+    return;
+  }
+
+  const fileName = file.name;
+  const fileSize = formatFileSize(file.size);
+  const fileType = file.type || (fileName.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword');
+
+  let extractedText = '';
+
+  if ((fileName.endsWith('.docx') || fileType.includes('openxmlformats')) && window.mammoth) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+      if (result && result.value) {
+        extractedText = result.value.trim();
+      }
+    } catch (err) {
+      console.warn('Mammoth text extraction note:', err);
+    }
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    const now = new Date();
+    const timeStr = `${now.getDate()} ${['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][now.getMonth()]} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    tempWordFileData = {
+      name: fileName,
+      size: fileSize,
+      bytes: file.size,
+      type: fileType,
+      dataUrl: dataUrl,
+      extractedText: extractedText,
+      uploadedAt: timeStr
+    };
+
+    renderWordFilePreview();
+
+    const scriptBox = document.getElementById('modal-script');
+    if (scriptBox && (!scriptBox.value || scriptBox.value.trim().length === 0) && extractedText) {
+      scriptBox.value = extractedText;
+      runTypoCheck();
+      showToast(`📄 แนบไฟล์ "${fileName}" และดึงข้อความลงในบทให้อัตโนมัติ`);
+    } else {
+      showToast(`📄 แนบไฟล์ "${fileName}" (${fileSize}) เรียบร้อยแล้ว`);
+    }
+
+    syncAndRefreshActions();
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function handleWordFileDrop(event) {
+  event.preventDefault();
+  const zone = document.getElementById('word-file-upload-zone');
+  if (zone) zone.classList.remove('border-blue-500', 'bg-blue-100/50');
+
+  if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+    const file = event.dataTransfer.files[0];
+    const dummyEvent = { target: { files: [file], value: '' } };
+    handleWordFileUpload(dummyEvent);
+  }
+}
+
+function renderWordFilePreview() {
+  const previewCard = document.getElementById('word-file-preview-card');
+  const uploadZone = document.getElementById('word-file-upload-zone');
+  const nameEl = document.getElementById('word-file-name');
+  const sizeEl = document.getElementById('word-file-size');
+  const timeEl = document.getElementById('word-file-time');
+  const btnExtract = document.getElementById('btn-extract-word-text');
+
+  if (!previewCard || !uploadZone) return;
+
+  if (tempWordFileData && tempWordFileData.dataUrl) {
+    previewCard.classList.remove('hidden');
+    uploadZone.classList.add('hidden');
+
+    if (nameEl) nameEl.textContent = tempWordFileData.name || 'บทคอนเทนต์.docx';
+    if (sizeEl) sizeEl.textContent = tempWordFileData.size || '';
+    if (timeEl) timeEl.textContent = tempWordFileData.uploadedAt ? `แนบเมื่อ ${tempWordFileData.uploadedAt}` : 'มีไฟล์แนบ';
+
+    if (btnExtract) {
+      if (tempWordFileData.extractedText && tempWordFileData.extractedText.trim().length > 0) {
+        btnExtract.classList.remove('hidden');
+      } else {
+        btnExtract.classList.add('hidden');
+      }
+    }
+  } else {
+    previewCard.classList.add('hidden');
+    uploadZone.classList.remove('hidden');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function downloadWordFile() {
+  if (!tempWordFileData || !tempWordFileData.dataUrl) {
+    showToast('⚠️ ไม่พบไฟล์ Word ให้ดาวน์โหลด');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = tempWordFileData.dataUrl;
+  a.download = tempWordFileData.name || 'บทคอนเทนต์.docx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast(`⬇️ กำลังดาวน์โหลด: ${tempWordFileData.name}`);
+}
+
+function insertExtractedWordText() {
+  if (!tempWordFileData || !tempWordFileData.extractedText) {
+    showToast('⚠️ ไม่พบข้อความที่ดึงได้จากไฟล์ Word');
+    return;
+  }
+  const scriptEl = document.getElementById('modal-script');
+  if (!scriptEl) return;
+
+  if (scriptEl.value.trim() && scriptEl.value.trim() !== tempWordFileData.extractedText) {
+    if (!confirm('ต้องการแทนที่ข้อความในกล่องบทด้วยเนื้อหาจากไฟล์ Word หรือไม่?')) {
+      return;
+    }
+  }
+
+  scriptEl.value = tempWordFileData.extractedText;
+  runTypoCheck();
+  syncModalFieldsToCardObject();
+  showToast('✓ ดึงข้อความจากไฟล์ Word ลงในกล่องบทเรียบร้อยแล้ว');
+}
+
+function removeWordFile() {
+  if (!confirm('ต้องการลบไฟล์ Word ที่แนบอยู่นี้หรือไม่?')) return;
+  tempWordFileData = null;
+  const fileInput = document.getElementById('modal-word-file-input');
+  if (fileInput) fileInput.value = '';
+  renderWordFilePreview();
+  syncAndRefreshActions();
+  showToast('ลบไฟล์ Word เรียบร้อยแล้ว');
+}
+
+function openWordDocsLink() {
+  const link = (document.getElementById('modal-word-link')?.value || '').trim();
+  if (!link) {
+    showToast('กรุณากรอกลิงก์ Google Docs หรือ Word Online ก่อนกดเปิด');
+    return;
+  }
+  let validUrl = link;
+  if (!/^https?:\/\//i.test(validUrl)) {
+    validUrl = 'https://' + validUrl;
+  }
+  window.open(validUrl, '_blank', 'noopener,noreferrer');
 }
 
 function updateCardModalStageVisibility(card) {
@@ -2605,6 +2797,8 @@ function syncModalFieldsToCardObject() {
   card.channels = tempChannels.map(ch => ({ ...ch }));
   card.checklist = tempChecklist.map(c => ({ ...c }));
   card.scheduleImage = tempProofImageData;
+  card.wordFile = tempWordFileData;
+  card.wordLink = document.getElementById('modal-word-link')?.value.trim() || '';
 }
 
 function saveCardModal(closeAfter = true) {
@@ -2756,6 +2950,7 @@ function renderCalendarView() {
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
+        ${card.wordFile ? `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">📄 Word</span>` : (card.wordLink ? `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">🔗 Docs</span>` : '')}
         <span class="text-xs px-2 py-0.5 rounded ${draftState.badge}">${draftState.shortLabel}</span>
         <span class="text-xs px-2 py-0.5 rounded ${pubState.badge}">${pubState.shortLabel}</span>
       </div>
