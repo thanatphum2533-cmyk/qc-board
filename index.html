@@ -27,33 +27,39 @@
 <body id="board-bg" class="trello-bg-blue min-h-screen flex flex-col font-sans select-none text-zinc-900 overflow-hidden antialiased">
 
   <!-- =====================================================================
-       STUDIO LOGIN OVERLAY (หน้าล็อกอินสำหรับน้องคนเขียนบท & ทีมงาน + เพิ่ม/ลบรายชื่อได้)
+       STUDIO LOGIN OVERLAY (แบ่งสิทธิ์: น้องคนเขียนบท vs แอดมินหลัก)
   ====================================================================== -->
   <div id="login-screen" class="fixed inset-0 z-50 bg-[#f4f4f5] flex items-center justify-center p-4 overflow-y-auto" style="background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px); background-size: 20px 20px;">
     <div class="w-full max-w-md bg-white border border-zinc-200/90 rounded-2xl shadow-[0_12px_40px_-12px_rgba(24,24,27,0.12)] overflow-hidden">
 
       <!-- Top Studio Header -->
       <div class="px-6 pt-6 pb-4 border-b border-zinc-100">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-tight">
-              QC
-            </div>
-            <div>
-              <h1 class="text-base font-semibold text-zinc-900 tracking-tight">เข้าสู่ระบบห้องทำงาน QC Board</h1>
-              <p class="text-xs text-zinc-500">เลือกบัญชีผู้ใช้งานของคุณเพื่อบันทึกชื่อในการส่งงานและประวัติแก้ไข</p>
-            </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-tight">
+            QC
           </div>
+          <div>
+            <h1 class="text-base font-semibold text-zinc-900 tracking-tight">เข้าสู่ระบบ QC Board</h1>
+            <p class="text-xs text-zinc-500">เลือกประเภทผู้ใช้งานเพื่อเข้าสู่กระดานส่งงาน</p>
+          </div>
+        </div>
+
+        <!-- Tab Switcher: Staff vs Master Admin -->
+        <div class="mt-4 bg-zinc-100 p-0.5 rounded-lg flex items-center text-xs border border-zinc-200/80">
+          <button id="tab-login-staff" type="button" onclick="switchLoginTab('staff')" class="flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center">
+            ทีมงาน / คนเขียนบท
+          </button>
+          <button id="tab-login-admin" type="button" onclick="switchLoginTab('admin')" class="flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center">
+            แอดมินหลัก (Admin)
+          </button>
         </div>
       </div>
 
-      <!-- Member Selection List -->
-      <div class="p-6 space-y-4">
+      <!-- TAB 1: STAFF LOGIN (น้องคนเขียนบท & ทีมงาน) -->
+      <div id="login-panel-staff" class="p-6 space-y-4">
         <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">รายชื่อทีมงานในระบบ</label>
-          <button type="button" onclick="toggleLoginAddMemberForm()" class="text-xs font-medium text-zinc-700 hover:text-zinc-900 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200/80 px-2.5 py-1 rounded-md transition">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> เพิ่ม / ลบคนเขียนบท
-          </button>
+          <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">เลือกชื่อของคุณเพื่อเริ่มงาน</label>
+          <span class="text-[11px] text-zinc-400">*แอดมินเป็นคนเพิ่มรายชื่อ</span>
         </div>
 
         <!-- Member Cards Grid -->
@@ -61,14 +67,14 @@
           <!-- Injected by renderLoginMemberList() -->
         </div>
 
-        <!-- PIN Input Box (Appears when selected user has a PIN) -->
+        <!-- Staff PIN Input Box (Appears only if Admin set a PIN for this staff) -->
         <div id="login-pin-box" class="hidden pt-2 border-t border-zinc-100 space-y-2">
           <div class="flex items-center justify-between text-xs">
-            <span class="text-zinc-600">รหัสเข้าใช้งานของ <b id="login-selected-name" class="text-zinc-900"></b></span>
+            <span class="text-zinc-600">รหัส PIN ของ <b id="login-selected-name" class="text-zinc-900"></b></span>
             <span id="login-pin-hint" class="font-mono text-[11px] text-zinc-400"></span>
           </div>
           <div class="flex gap-2">
-            <input id="login-pin-input" type="password" inputmode="numeric" maxlength="12" placeholder="กรอกรหัส PIN (ค่าเริ่มต้น 1234)..."
+            <input id="login-pin-input" type="password" inputmode="numeric" maxlength="12" placeholder="กรอกรหัส PIN..."
               onkeydown="if(event.key==='Enter'){event.preventDefault();confirmMemberLogin();}"
               class="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400" />
             <button type="button" onclick="confirmMemberLogin()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-2 rounded-lg transition shadow-sm">
@@ -77,31 +83,41 @@
           </div>
           <p id="login-error-msg" class="hidden text-[11px] text-rose-600 font-medium"></p>
         </div>
+      </div>
 
-        <!-- Inline Quick Add Member Form inside Login Screen -->
-        <div id="login-add-member-box" class="hidden pt-3 border-t border-zinc-200 bg-zinc-50/70 -mx-6 -mb-6 p-6 space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-semibold text-zinc-800">เพิ่มรายชื่อคนเขียนบท / ทีมงานใหม่</h3>
-            <button type="button" onclick="toggleLoginAddMemberForm()" class="text-[11px] text-zinc-400 hover:text-zinc-700">ซ่อนฟอร์ม</button>
+      <!-- TAB 2: MASTER ADMIN LOGIN (แอดมินหลัก) -->
+      <div id="login-panel-admin" class="hidden p-6 space-y-4">
+        <div class="bg-zinc-50 p-3.5 rounded-lg border border-zinc-200 text-xs text-zinc-600 space-y-1">
+          <div class="font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            สิทธิ์แอดมินหลัก (Super Admin)
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input id="login-new-name" type="text" placeholder="ชื่อเรียก (เช่น น้องพลอย)"
-              class="bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
-            <select id="login-new-role" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400">
-              <option value="writer">คนเขียนบท (Writer)</option>
-              <option value="editor">ทีมตัดต่อ (Editor)</option>
-              <option value="poster">แอดมินลงโพสต์ (Admin)</option>
-              <option value="manager">หัวหน้าตรวจงาน (QC / Manager)</option>
-            </select>
+          <p class="text-[11px] text-zinc-500">สำหรับหัวหน้าเพื่อเข้าจัดการเพิ่ม/ลบรายชื่อคนเขียนบท อนุมัติงาน และตั้งค่าระบบ</p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-zinc-600 mb-1">ID แอดมิน (Username)</label>
+            <input id="admin-login-id" type="text" placeholder="ID แอดมิน (ค่าเริ่มต้น: admin)"
+              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-400" />
           </div>
-          <div class="flex gap-2">
-            <input id="login-new-pin" type="text" placeholder="ตั้งรหัส PIN (เช่น 1234 หรือเว้นว่างให้กดเข้าได้เลย)"
-              class="flex-1 bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-400" />
-            <button type="button" onclick="addTeamMemberFromLogin()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-3.5 py-1.5 rounded-md shrink-0 transition">
-              + บันทึกรายชื่อ
-            </button>
+          <div>
+            <label class="block text-xs font-medium text-zinc-600 mb-1">รหัสผ่านแอดมิน (Password)</label>
+            <input id="admin-login-pwd" type="password" placeholder="รหัสผ่าน (ค่าเริ่มต้น: admin123)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();submitMasterAdminLogin();}"
+              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400" />
+            <div class="flex justify-between items-center mt-1">
+              <span class="text-[10px] text-zinc-400 font-mono">ค่าเริ่มต้น: ID: admin / Pass: admin123</span>
+              <span class="text-[10px] text-zinc-500">*เปลี่ยนได้ในระบบ</span>
+            </div>
           </div>
         </div>
+
+        <p id="admin-login-error" class="hidden text-xs text-rose-600 font-medium"></p>
+
+        <button type="button" onclick="submitMasterAdminLogin()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i> เข้าสู่ระบบแอดมินหลัก
+        </button>
       </div>
 
     </div>
@@ -584,25 +600,25 @@
   </div>
 
   <!-- =====================================================================
-       MODAL 2: TEAM MEMBER MANAGEMENT (เพิ่ม / ลบรายชื่อคนเขียนบท & ตั้งรหัสล็อกอิน)
+       MODAL 2: ADMIN CONSOLE (แผงควบคุมแอดมินหลัก: เพิ่ม/ลบคนเขียนบท & ตั้ง ID/รหัสผ่านแอดมิน)
   ====================================================================== -->
   <div id="team-modal" onclick="if(event.target.id==='team-modal')closeTeamModal()" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-50 hidden items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[86vh]">
+    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[88vh]">
       <div class="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-            <i data-lucide="users" class="w-4 h-4"></i>
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
           </div>
           <div>
-            <h2 class="text-sm font-semibold text-zinc-900">จัดการรายชื่อคนเขียนบท & ทีมงาน (เพิ่ม / ลบ / สลับบัญชี)</h2>
-            <p class="text-xs text-zinc-500">รายชื่อที่เพิ่มจะปรากฏในหน้าล็อกอินและช่องเลือกผู้รับผิดชอบงานทันที</p>
+            <h2 class="text-sm font-semibold text-zinc-900">แผงควบคุมแอดมินหลัก (Admin Console)</h2>
+            <p class="text-xs text-zinc-500">จัดการรายชื่อคนเขียนบท / เพิ่ม-ลบพนักงาน และตั้งค่า ID/รหัสผ่านของแอดมิน</p>
           </div>
         </div>
         <button onclick="closeTeamModal()" class="text-zinc-400 hover:text-zinc-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
 
       <div class="p-6 overflow-y-auto space-y-5 flex-1">
-        <!-- Add New Team Member Form -->
+        <!-- Section 1: Add New Team Member Form -->
         <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 space-y-3">
           <h3 class="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
             <i data-lucide="user-plus" class="w-3.5 h-3.5 text-zinc-500"></i>
@@ -617,7 +633,7 @@
               <option value="poster">แอดมินลงโพสต์ (Admin)</option>
               <option value="manager">หัวหน้าตรวจงาน (QC / Manager)</option>
             </select>
-            <input id="team-new-pin" type="text" placeholder="รหัส PIN (เช่น 1234 หรือเว้นว่าง)"
+            <input id="team-new-pin" type="text" placeholder="รหัส PIN (เว้นว่างได้)"
               class="bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-400" />
           </div>
           <div class="flex justify-end">
@@ -627,21 +643,49 @@
           </div>
         </div>
 
-        <!-- Existing Team Members List -->
+        <!-- Section 2: Existing Team Members List with Delete -->
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs text-zinc-500">
-            <span class="font-semibold uppercase tracking-wider text-[11px] text-zinc-400">รายชื่อทั้งหมดในระบบ</span>
+            <span class="font-semibold uppercase tracking-wider text-[11px] text-zinc-400">รายชื่อคนเขียนบท & พนักงานในระบบ</span>
             <span id="team-count-label" class="font-mono text-[11px]"></span>
           </div>
-          <div id="team-member-manage-list" class="divide-y divide-zinc-100 border border-zinc-200 rounded-lg overflow-hidden bg-white">
+          <div id="team-member-manage-list" class="divide-y divide-zinc-100 border border-zinc-200 rounded-lg overflow-hidden bg-white max-h-52 overflow-y-auto">
             <!-- Populated by renderTeamManageList() -->
+          </div>
+        </div>
+
+        <!-- Section 3: Master Admin ID & Password Customization -->
+        <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+              <i data-lucide="key-round" class="w-3.5 h-3.5 text-zinc-500"></i>
+              ตั้งค่า ID และรหัสผ่านของแอดมินหลัก (Master Admin)
+            </h3>
+            <span class="text-[10px] text-zinc-400 font-mono">แอดมินไปเพิ่ม/เปลี่ยนเองได้ที่นี่</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-medium text-zinc-600 mb-1">ID แอดมิน (Username)</label>
+              <input id="admin-config-id" type="text" placeholder="เช่น admin หรือ พี่เมย์"
+                class="w-full bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 font-mono focus:outline-none focus:border-zinc-400" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-zinc-600 mb-1">รหัสผ่านแอดมิน (Password)</label>
+              <input id="admin-config-pwd" type="text" placeholder="ตั้งรหัสผ่านใหม่..."
+                class="w-full bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 font-mono focus:outline-none focus:border-zinc-400" />
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" onclick="saveMasterAdminCredentials()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md transition flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i> บันทึก ID และรหัสแอดมิน
+            </button>
           </div>
         </div>
       </div>
 
       <div class="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between">
         <button type="button" onclick="closeTeamModal();openLoginScreen();" class="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1.5">
-          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> ไปหน้าล็อกอิน (สลับผู้ใช้งาน)
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> สลับบัญชี / ออกจากระบบ
         </button>
         <button type="button" onclick="closeTeamModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md">
           เสร็จสิ้น

@@ -10,9 +10,15 @@ const STORAGE_KEY_THEME = 'qc_board_theme_v4';
 const STORAGE_KEY_TITLE = 'qc_board_title_v4';
 const STORAGE_KEY_TEAM = 'qc_board_team_v4';
 const STORAGE_KEY_ACTIVE_MEMBER = 'qc_board_active_member_v4';
+const STORAGE_KEY_ADMIN_CREDS = 'qc_board_admin_creds_v4';
+
+const DEFAULT_ADMIN_CREDS = {
+  username: 'admin',
+  password: '123'
+};
 
 const DEFAULT_TEAM_MEMBERS = [
-  { id: 'usr-1', name: 'หัวหน้า (QC / Manager)', role: 'manager', pin: '1234', color: 'bg-zinc-900 text-white' },
+  { id: 'usr-admin', name: 'หัวหน้าหลัก (Admin / QC)', role: 'manager', pin: '', color: 'bg-zinc-900 text-white', isAdmin: true },
   { id: 'usr-2', name: 'น้องมายด์ (คนเขียนบท)', role: 'writer', pin: '', color: 'bg-sky-600 text-white' },
   { id: 'usr-3', name: 'น้องพลอย (คนเขียนบท)', role: 'writer', pin: '', color: 'bg-violet-600 text-white' },
   { id: 'usr-4', name: 'ทีมตัดต่อ (Editor)', role: 'editor', pin: '', color: 'bg-amber-600 text-white' },
@@ -372,12 +378,21 @@ function getInitialDemoCards() {
 // ============================================================================
 // LOGIN & TEAM MANAGEMENT SYSTEM
 // ============================================================================
+let adminCredentials = { ...DEFAULT_ADMIN_CREDS };
+
 function loadTeamState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_TEAM);
     teamMembers = saved ? JSON.parse(saved) : [...DEFAULT_TEAM_MEMBERS];
   } catch (e) {
     teamMembers = [...DEFAULT_TEAM_MEMBERS];
+  }
+
+  try {
+    const savedCreds = localStorage.getItem(STORAGE_KEY_ADMIN_CREDS);
+    adminCredentials = savedCreds ? JSON.parse(savedCreds) : { ...DEFAULT_ADMIN_CREDS };
+  } catch (e) {
+    adminCredentials = { ...DEFAULT_ADMIN_CREDS };
   }
 
   try {
@@ -401,7 +416,7 @@ function updateActiveUserBadge() {
 
   if (navName) navName.textContent = activeMember.name;
   if (navAvatar) {
-    const initial = activeMember.name.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
+    const initial = activeMember.name.replace('น้อง', '').replace('ทีม', '').replace('หัวหน้า', '').trim().charAt(0) || 'U';
     navAvatar.textContent = initial;
   }
   if (navRole) {
@@ -411,7 +426,7 @@ function updateActiveUserBadge() {
       editor: 'ทีมตัดต่อ',
       poster: 'คนลงโพสต์'
     };
-    navRole.textContent = roleLabels[activeMember.role] || 'ทีมงาน';
+    navRole.textContent = activeMember.isAdmin ? 'แอดมินหลัก' : (roleLabels[activeMember.role] || 'ทีมงาน');
   }
   if (modalActor) modalActor.textContent = activeMember.name;
 
@@ -433,9 +448,36 @@ function populateAssigneeDropdown() {
 }
 
 let pendingLoginMember = null;
+let currentLoginTab = 'staff';
+
+function switchLoginTab(tab) {
+  currentLoginTab = tab;
+  const staffBtn = document.getElementById('tab-login-staff');
+  const adminBtn = document.getElementById('tab-login-admin');
+  const staffPanel = document.getElementById('login-panel-staff');
+  const adminPanel = document.getElementById('login-panel-admin');
+
+  if (tab === 'staff') {
+    staffBtn.className = 'flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center';
+    adminBtn.className = 'flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center';
+    staffPanel.classList.remove('hidden');
+    adminPanel.classList.add('hidden');
+  } else {
+    adminBtn.className = 'flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center';
+    staffBtn.className = 'flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center';
+    adminPanel.classList.remove('hidden');
+    staffPanel.classList.add('hidden');
+    const idInput = document.getElementById('admin-login-id');
+    if (idInput) {
+      if (!idInput.value) idInput.value = adminCredentials.username || 'admin';
+      idInput.focus();
+    }
+  }
+}
 
 function openLoginScreen() {
   renderLoginMemberList();
+  switchLoginTab('staff');
   const screen = document.getElementById('login-screen');
   screen.classList.remove('hidden');
   screen.classList.add('flex');
@@ -460,7 +502,20 @@ function renderLoginMemberList() {
     poster: 'แอดมินเพจ (Poster)'
   };
 
-  teamMembers.forEach(m => {
+  // Only show staff members in Staff tab (Master Admin logs in via Admin tab)
+  const staffList = teamMembers.filter(m => !m.isAdmin);
+
+  if (staffList.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-6 text-xs text-zinc-400">
+        ยังไม่มีรายชื่อคนเขียนบทในระบบ<br>
+        กรุณาเข้าสู่ระบบผ่านแท็บ "แอดมินหลัก" เพื่อเพิ่มรายชื่อคนเขียนบทครับ
+      </div>
+    `;
+    return;
+  }
+
+  staffList.forEach(m => {
     const initial = m.name.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
     const isSelected = pendingLoginMember && pendingLoginMember.id === m.id;
     const card = document.createElement('div');
@@ -482,7 +537,7 @@ function renderLoginMemberList() {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        ${m.pin ? '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-600 font-medium">มีรหัส PIN</span>' : '<span class="text-[10px] text-zinc-400">กดเข้าได้เลย</span>'}
+        ${m.pin ? '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-600 font-medium">มี PIN</span>' : '<span class="text-[10px] text-emerald-600 font-medium">กดเข้าได้เลย</span>'}
         <span class="text-xs font-bold text-zinc-400">→</span>
       </div>
     `;
@@ -500,7 +555,6 @@ function selectMemberForLogin(memberId) {
   const selName = document.getElementById('login-selected-name');
   const pinInput = document.getElementById('login-pin-input');
   const errBox = document.getElementById('login-error-msg');
-  const pinHint = document.getElementById('login-pin-hint');
 
   errBox.classList.add('hidden');
   selName.textContent = m.name;
@@ -509,15 +563,14 @@ function selectMemberForLogin(memberId) {
     pinBox.classList.remove('hidden');
     pinInput.value = '';
     pinInput.focus();
-    pinHint.textContent = m.pin === '1234' ? '(รหัสเริ่มต้น: 1234)' : '';
   } else {
     pinBox.classList.add('hidden');
-    // Log in directly if no PIN is set
+    // Log in directly
     activeMember = m;
     localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, m.id);
     updateActiveUserBadge();
     closeLoginScreen();
-    showToast(`👋 ยินดีต้อนรับ ${m.name} เข้าสู่ระบบ QC Board`);
+    showToast(`👋 เข้าสู่ระบบในชื่อ: ${m.name}`);
   }
 }
 
@@ -528,7 +581,7 @@ function confirmMemberLogin() {
   const val = (pinInput?.value || '').trim();
 
   if (pendingLoginMember.pin && val !== pendingLoginMember.pin) {
-    errBox.textContent = '❌ รหัส PIN ไม่ถูกต้อง (หากลืมรหัส สามารถติดต่อหัวหน้า หรือกดเพิ่ม/ลบรายชื่อได้)';
+    errBox.textContent = '❌ รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
     errBox.classList.remove('hidden');
     return;
   }
@@ -537,46 +590,71 @@ function confirmMemberLogin() {
   localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, pendingLoginMember.id);
   updateActiveUserBadge();
   closeLoginScreen();
-  showToast(`✅ เข้าสู่ระบบสำเร็จในชื่อ: ${pendingLoginMember.name}`);
+  showToast(`✅ เข้าสู่ระบบสำเร็จ: ${pendingLoginMember.name}`);
 }
 
-function toggleLoginAddMemberForm() {
-  const box = document.getElementById('login-add-member-box');
-  box.classList.toggle('hidden');
-}
+// Master Admin Authentication
+function submitMasterAdminLogin() {
+  const idInput = document.getElementById('admin-login-id');
+  const pwdInput = document.getElementById('admin-login-pwd');
+  const errBox = document.getElementById('admin-login-error');
 
-function addTeamMemberFromLogin() {
-  const nameInput = document.getElementById('login-new-name');
-  const roleInput = document.getElementById('login-new-role');
-  const pinInput = document.getElementById('login-new-pin');
+  const inputId = (idInput?.value || '').trim();
+  const inputPwd = (pwdInput?.value || '').trim();
 
-  const name = (nameInput?.value || '').trim();
-  if (!name) {
-    alert('กรุณากรอกชื่อคนเขียนบทหรือทีมงาน');
+  const validId = adminCredentials.username || 'admin';
+  const validPwd = adminCredentials.password || '123';
+
+  if (inputId !== validId || inputPwd !== validPwd) {
+    errBox.textContent = '❌ ID หรือรหัสผ่านแอดมินไม่ถูกต้อง';
+    errBox.classList.remove('hidden');
     return;
   }
 
-  const newMember = {
-    id: 'usr-' + Date.now(),
-    name,
-    role: roleInput?.value || 'writer',
-    pin: (pinInput?.value || '').trim(),
-    color: 'bg-zinc-800 text-white'
-  };
+  errBox.classList.add('hidden');
 
-  teamMembers.push(newMember);
-  saveState();
-  nameInput.value = '';
-  pinInput.value = '';
-  toggleLoginAddMemberForm();
-  renderLoginMemberList();
-  selectMemberForLogin(newMember.id);
-  showToast(`➕ เพิ่ม "${name}" เข้าระบบเรียบร้อยแล้ว`);
+  let adminUser = teamMembers.find(m => m.isAdmin);
+  if (!adminUser) {
+    adminUser = {
+      id: 'usr-admin',
+      name: `แอดมินหลัก (${validId})`,
+      role: 'manager',
+      pin: '',
+      color: 'bg-zinc-900 text-white',
+      isAdmin: true
+    };
+    teamMembers.unshift(adminUser);
+  } else {
+    adminUser.name = `แอดมินหลัก (${validId})`;
+  }
+
+  activeMember = adminUser;
+  localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, adminUser.id);
+  updateActiveUserBadge();
+  closeLoginScreen();
+  showToast(`👑 เข้าสู่ระบบแอดมินหลักเรียบร้อย! สามารถจัดการคนเขียนบทได้เลยครับ`);
+  openTeamModal();
 }
 
-// Team Member Modal Management
+// Admin Console: Team Member Management & Admin Settings
 function openTeamModal() {
+  // If not logged in as Admin, prompt for admin password
+  if (!activeMember || !activeMember.isAdmin) {
+    const pwd = prompt('🔐 กรุณากรอกรหัสผ่านของแอดมินหลัก เพื่อเข้าสู่ระบบจัดการรายชื่อคนเขียนบท:');
+    if (pwd === null) return;
+    if (pwd.trim() !== (adminCredentials.password || '123')) {
+      alert('❌ รหัสผ่านแอดมินไม่ถูกต้อง ไม่สามารถเข้าจัดการรายชื่อพนักงานได้');
+      return;
+    }
+  }
+
   renderTeamManageList();
+
+  const cfgId = document.getElementById('admin-config-id');
+  const cfgPwd = document.getElementById('admin-config-pwd');
+  if (cfgId) cfgId.value = adminCredentials.username || 'admin';
+  if (cfgPwd) cfgPwd.value = adminCredentials.password || '123';
+
   const m = document.getElementById('team-modal');
   m.classList.remove('hidden');
   m.classList.add('flex');
@@ -590,12 +668,37 @@ function closeTeamModal() {
   updateActiveUserBadge();
 }
 
+function saveMasterAdminCredentials() {
+  const cfgId = document.getElementById('admin-config-id');
+  const cfgPwd = document.getElementById('admin-config-pwd');
+
+  const newId = (cfgId?.value || '').trim();
+  const newPwd = (cfgPwd?.value || '').trim();
+
+  if (!newId || !newPwd) {
+    alert('กรุณากรอกทั้ง ID และรหัสผ่านแอดมินให้ครบถ้วน');
+    return;
+  }
+
+  adminCredentials = { username: newId, password: newPwd };
+  localStorage.setItem(STORAGE_KEY_ADMIN_CREDS, JSON.stringify(adminCredentials));
+
+  const adminUser = teamMembers.find(m => m.isAdmin);
+  if (adminUser) adminUser.name = `แอดมินหลัก (${newId})`;
+
+  saveState();
+  updateActiveUserBadge();
+  showToast(`💾 บันทึก ID และรหัสผ่านของแอดมินหลักเรียบร้อยแล้ว (ID: ${newId})`);
+}
+
 function renderTeamManageList() {
   const container = document.getElementById('team-member-manage-list');
   const countLabel = document.getElementById('team-count-label');
   if (!container) return;
   container.innerHTML = '';
-  if (countLabel) countLabel.textContent = `${teamMembers.length} คน`;
+
+  const staffList = teamMembers.filter(m => !m.isAdmin);
+  if (countLabel) countLabel.textContent = `${staffList.length} คน`;
 
   const roleLabels = {
     manager: 'หัวหน้าตรวจงาน (QC)',
@@ -604,7 +707,12 @@ function renderTeamManageList() {
     poster: 'แอดมินเพจ (Poster)'
   };
 
-  teamMembers.forEach(m => {
+  if (staffList.length === 0) {
+    container.innerHTML = '<div class="p-4 text-center text-xs text-zinc-400">ยังไม่มีรายชื่อคนเขียนบท กรุณาเพิ่มที่ฟอร์มด้านบน</div>';
+    return;
+  }
+
+  staffList.forEach(m => {
     const isCurrent = activeMember && activeMember.id === m.id;
     const initial = m.name.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
 
@@ -620,33 +728,18 @@ function renderTeamManageList() {
             ${escapeHtml(m.name)}
             ${isCurrent ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-medium">กำลังใช้งาน</span>' : ''}
           </div>
-          <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)} · PIN: ${m.pin ? escapeHtml(m.pin) : 'ไม่มี'}</div>
+          <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)} · PIN: ${m.pin ? escapeHtml(m.pin) : 'ไม่มี (กดเข้าได้เลย)'}</div>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <button type="button" onclick="switchActiveMember('${m.id}')" class="px-2.5 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-medium text-[11px] transition">
-          สลับมาใช้นี้
+        <button type="button" onclick="deleteTeamMember('${m.id}')" class="px-2 py-1 rounded text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition text-xs flex items-center gap-1" title="ลบรายชื่อ">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบ
         </button>
-        ${teamMembers.length > 1 ? `
-          <button type="button" onclick="deleteTeamMember('${m.id}')" class="p-1 rounded text-zinc-400 hover:text-rose-600 transition" title="ลบรายชื่อ">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          </button>
-        ` : ''}
       </div>
     `;
     container.appendChild(row);
   });
   lucide.createIcons();
-}
-
-function switchActiveMember(memberId) {
-  const m = teamMembers.find(x => x.id === memberId);
-  if (!m) return;
-  activeMember = m;
-  localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, m.id);
-  updateActiveUserBadge();
-  renderTeamManageList();
-  showToast(`สลับผู้ใช้งานเป็น: ${m.name}`);
 }
 
 function deleteTeamMember(memberId) {
@@ -655,13 +748,10 @@ function deleteTeamMember(memberId) {
   if (!confirm(`ต้องการลบรายชื่อ "${m.name}" ออกจากระบบใช่หรือไม่?`)) return;
 
   teamMembers = teamMembers.filter(x => x.id !== memberId);
-  if (activeMember && activeMember.id === memberId) {
-    activeMember = teamMembers[0] || null;
-    if (activeMember) localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, activeMember.id);
-  }
   saveState();
   renderTeamManageList();
-  updateActiveUserBadge();
+  renderLoginMemberList();
+  populateAssigneeDropdown();
   showToast(`ลบรายชื่อ "${m.name}" เรียบร้อยแล้ว`);
 }
 
@@ -672,7 +762,7 @@ function addTeamMemberFromModal() {
 
   const name = (nameEl?.value || '').trim();
   if (!name) {
-    alert('กรุณากรอกชื่อพนักงาน');
+    alert('กรุณากรอกชื่อพนักงานหรือคนเขียนบท');
     return;
   }
 
@@ -681,7 +771,8 @@ function addTeamMemberFromModal() {
     name,
     role: roleEl?.value || 'writer',
     pin: (pinEl?.value || '').trim(),
-    color: 'bg-zinc-800 text-white'
+    color: 'bg-zinc-800 text-white',
+    isAdmin: false
   };
 
   teamMembers.push(newM);
@@ -689,7 +780,8 @@ function addTeamMemberFromModal() {
   nameEl.value = '';
   pinEl.value = '';
   renderTeamManageList();
-  updateActiveUserBadge();
+  renderLoginMemberList();
+  populateAssigneeDropdown();
   showToast(`➕ เพิ่มรายชื่อ "${name}" เข้าสู่ทีมเรียบร้อย`);
 }
 
@@ -2517,6 +2609,7 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY_CARDS, JSON.stringify(cards));
   localStorage.setItem(STORAGE_KEY_DICT, JSON.stringify(typoDict));
   localStorage.setItem(STORAGE_KEY_TEAM, JSON.stringify(teamMembers));
+  localStorage.setItem(STORAGE_KEY_ADMIN_CREDS, JSON.stringify(adminCredentials));
   updateStats();
 
   fetch('/api/state', {
@@ -2528,6 +2621,7 @@ function saveState() {
       cards,
       typoDict,
       teamMembers,
+      adminCredentials,
       boardTitle: document.getElementById('board-title-input')?.value || '',
       boardTheme: localStorage.getItem(STORAGE_KEY_THEME) || 'trello-bg-blue'
     })
@@ -2563,6 +2657,10 @@ async function syncFromServerState(isInitial = false) {
         if (Array.isArray(remote.teamMembers) && remote.teamMembers.length > 0) {
           teamMembers = remote.teamMembers;
           updateActiveUserBadge();
+        }
+        if (remote.adminCredentials && remote.adminCredentials.username) {
+          adminCredentials = remote.adminCredentials;
+          localStorage.setItem(STORAGE_KEY_ADMIN_CREDS, JSON.stringify(adminCredentials));
         }
         if (remote.boardTitle && document.getElementById('board-title-input')) {
           document.getElementById('board-title-input').value = remote.boardTitle;
