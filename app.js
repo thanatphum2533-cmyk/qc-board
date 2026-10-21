@@ -1615,7 +1615,22 @@ function renderBoard() {
               onchange="renameColumn('${col.id}', this.value)"
               class="bg-transparent focus:bg-white font-semibold text-xs text-zinc-900 px-1 py-0.5 rounded w-full focus:outline-none focus:ring-1 focus:ring-zinc-300 truncate" />
           </div>
-          <span class="font-mono text-[11px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 text-zinc-700 shrink-0">${colCards.length}</span>
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="font-mono text-[11px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 text-zinc-700">${colCards.length}</span>
+            <div class="relative group">
+              <button type="button" class="w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-800 hover:bg-zinc-200/60 transition" title="ตัวเลือกคอลัมน์">
+                <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+              </button>
+              <div class="hidden group-hover:block hover:block absolute right-0 top-6 z-30 w-44 bg-white rounded-lg shadow-xl border border-zinc-200 py-1 text-xs">
+                <button type="button" onclick="clearColumnCards('${col.id}')" class="w-full text-left px-3 py-1.5 hover:bg-zinc-50 text-zinc-700 flex items-center gap-2">
+                  <i data-lucide="archive" class="w-3.5 h-3.5 text-zinc-400"></i> ล้างการ์ดในช่องนี้
+                </button>
+                <button type="button" onclick="deleteColumn('${col.id}')" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-500"></i> ลบช่องนี้ทิ้ง
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         ${col.subtitle ? `<p class="text-[10px] text-zinc-500 px-1 mt-0.5">${escapeHtml(col.subtitle)}</p>` : ''}
       </div>
@@ -1894,6 +1909,57 @@ function promptAddColumn() {
   });
   saveState();
   renderBoard();
+}
+
+function deleteColumn(colId) {
+  const col = columns.find(c => c.id === colId);
+  if (!col) return;
+
+  const count = cards.filter(c => c.status === colId).length;
+  const msg = count > 0
+    ? `⚠️ ช่อง "${col.title}" มีการ์ดงานอยู่ ${count} ใบ\nหากลบช่องนี้ การ์ดงานทั้ง ${count} ใบจะถูกลบไปด้วย คุณต้องการลบใช่หรือไม่?`
+    : `ต้องการลบช่อง "${col.title}" ใช่หรือไม่?`;
+
+  if (!confirm(msg)) return;
+
+  columns = columns.filter(c => c.id !== colId);
+  cards = cards.filter(c => c.status !== colId);
+  saveState();
+  renderBoard();
+  showToast(`ลบช่อง "${col.title}" เรียบร้อยแล้ว`);
+}
+
+function clearColumnCards(colId) {
+  const col = columns.find(c => c.id === colId);
+  if (!col) return;
+
+  const count = cards.filter(c => c.status === colId).length;
+  if (count === 0) {
+    showToast('ช่องนี้ยังไม่มีการ์ดงาน');
+    return;
+  }
+
+  if (!confirm(`ต้องการลบการ์ดงานทั้งหมด ${count} ใบในช่อง "${col.title}" ใช่หรือไม่?`)) return;
+
+  cards = cards.filter(c => c.status !== colId);
+  saveState();
+  renderBoard();
+  showToast(`ลบการ์ดทั้งหมดในช่อง "${col.title}" เรียบร้อย`);
+}
+
+function clearEntireBoard() {
+  if (cards.length === 0) {
+    showToast('กระดานว่างอยู่แล้ว ไม่มีงานค้าง');
+    return;
+  }
+
+  const ans = confirm(`⚠️ ต้องการล้างกระดานและลบการ์ดงานทั้งหมด ${cards.length} ใบใช่หรือไม่?\n\n(กดตกลงเพื่อเคลียร์งานตัวอย่างออกทั้งหมด และเริ่มทำงานจริงจากกระดานเปล่า)`);
+  if (!ans) return;
+
+  cards = [];
+  saveState();
+  renderCurrentView();
+  showToast('🧹 ล้างกระดานเรียบร้อยแล้ว บอร์ดว่างพร้อมใช้งาน');
 }
 
 function updateStats() {
