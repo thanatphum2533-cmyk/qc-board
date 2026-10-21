@@ -2261,6 +2261,7 @@ function openCardModal(cardId) {
   renderProofImagePreview();
   runTypoCheck();
   renderWorkflowActionButtons(card);
+  updateScheduleSectionVisibility(card);
   renderHistoryLog(card);
   updateActiveUserBadge();
 
@@ -2408,7 +2409,21 @@ function renderProofImagePreview() {
   }
 }
 
+function updateScheduleSectionVisibility(card) {
+  const scheduleSection = document.getElementById('modal-schedule-section');
+  if (!scheduleSection) return;
+
+  // Schedule Post section strictly belongs to stage "6. รอลง (ตั้งเวลาโพสต์)" (waiting_post) and "7. ลงแล้ว" (posted)
+  const isPostStage = card && (card.status === 'waiting_post' || card.status === 'posted');
+  if (isPostStage) {
+    scheduleSection.classList.remove('hidden');
+  } else {
+    scheduleSection.classList.add('hidden');
+  }
+}
+
 function renderWorkflowActionButtons(card) {
+  updateScheduleSectionVisibility(card);
   const container = document.getElementById('workflow-buttons');
   if (!container) return;
   container.innerHTML = '';
