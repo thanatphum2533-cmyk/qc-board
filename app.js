@@ -18,11 +18,11 @@ const DEFAULT_ADMIN_CREDS = {
 };
 
 const DEFAULT_TEAM_MEMBERS = [
-  { id: 'usr-admin', name: 'หัวหน้าหลัก (Admin / QC)', role: 'manager', pin: '', color: 'bg-zinc-900 text-white', isAdmin: true },
-  { id: 'usr-2', name: 'น้องมายด์ (คนเขียนบท)', role: 'writer', pin: '', color: 'bg-sky-600 text-white' },
-  { id: 'usr-3', name: 'น้องพลอย (คนเขียนบท)', role: 'writer', pin: '', color: 'bg-violet-600 text-white' },
-  { id: 'usr-4', name: 'ทีมตัดต่อ (Editor)', role: 'editor', pin: '', color: 'bg-amber-600 text-white' },
-  { id: 'usr-5', name: 'แอดมินเพจ (คนลงโพสต์)', role: 'poster', pin: '', color: 'bg-emerald-600 text-white' }
+  { id: 'usr-admin', name: 'หัวหน้าหลัก (Admin / QC)', role: 'manager', pin: '123', color: 'bg-zinc-900 text-white', isAdmin: true },
+  { id: 'usr-2', name: 'น้องมายด์ (คนเขียนบท)', role: 'writer', pin: '101', color: 'bg-sky-600 text-white' },
+  { id: 'usr-3', name: 'น้องพลอย (คนเขียนบท)', role: 'writer', pin: '102', color: 'bg-violet-600 text-white' },
+  { id: 'usr-4', name: 'ทีมตัดต่อ (Editor)', role: 'editor', pin: '201', color: 'bg-amber-600 text-white' },
+  { id: 'usr-5', name: 'แอดมินเพจ (คนลงโพสต์)', role: 'poster', pin: '301', color: 'bg-emerald-600 text-white' }
 ];
 
 const DEFAULT_COLUMNS = [
@@ -384,6 +384,12 @@ function loadTeamState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_TEAM);
     teamMembers = saved ? JSON.parse(saved) : [...DEFAULT_TEAM_MEMBERS];
+    const defaultPins = { 'usr-admin': '123', 'usr-2': '101', 'usr-3': '102', 'usr-4': '201', 'usr-5': '301' };
+    teamMembers.forEach(m => {
+      if (!m.pin && defaultPins[m.id]) {
+        m.pin = defaultPins[m.id];
+      }
+    });
   } catch (e) {
     teamMembers = [...DEFAULT_TEAM_MEMBERS];
   }
@@ -447,38 +453,22 @@ function populateAssigneeDropdown() {
   }
 }
 
-let pendingLoginMember = null;
-let currentLoginTab = 'staff';
-
-function switchLoginTab(tab) {
-  currentLoginTab = tab;
-  const staffBtn = document.getElementById('tab-login-staff');
-  const adminBtn = document.getElementById('tab-login-admin');
-  const staffPanel = document.getElementById('login-panel-staff');
-  const adminPanel = document.getElementById('login-panel-admin');
-
-  if (tab === 'staff') {
-    staffBtn.className = 'flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center';
-    adminBtn.className = 'flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center';
-    staffPanel.classList.remove('hidden');
-    adminPanel.classList.add('hidden');
-  } else {
-    adminBtn.className = 'flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center';
-    staffBtn.className = 'flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center';
-    adminPanel.classList.remove('hidden');
-    staffPanel.classList.add('hidden');
-    const idInput = document.getElementById('admin-login-id');
-    if (idInput) {
-      if (!idInput.value) idInput.value = adminCredentials.username || 'admin';
-      idInput.focus();
-    }
-  }
-}
-
+// ============================================================================
+// PASSCODE LOGIN SYSTEM (รหัสเดียว ยืนยันตัวตนทันที)
+// ============================================================================
 function openLoginScreen() {
-  renderLoginMemberList();
-  switchLoginTab('staff');
   const screen = document.getElementById('login-screen');
+  const input = document.getElementById('login-passcode-input');
+  const errBox = document.getElementById('login-passcode-error');
+
+  if (errBox) errBox.classList.add('hidden');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 120);
+  }
+
+  renderLoginQuickTags();
+
   screen.classList.remove('hidden');
   screen.classList.add('flex');
   lucide.createIcons();
@@ -490,150 +480,113 @@ function closeLoginScreen() {
   screen.classList.remove('flex');
 }
 
-function renderLoginMemberList() {
-  const container = document.getElementById('login-member-list');
+function renderLoginQuickTags() {
+  const container = document.getElementById('login-quick-tags');
   if (!container) return;
   container.innerHTML = '';
 
-  const roleLabels = {
-    manager: 'หัวหน้าตรวจงาน (QC)',
-    writer: 'คนเขียนบท (Writer)',
-    editor: 'ทีมตัดต่อ (Editor)',
-    poster: 'แอดมินเพจ (Poster)'
-  };
+  const adminPass = adminCredentials.password || '123';
 
-  // Only show staff members in Staff tab (Master Admin logs in via Admin tab)
+  // 1. Master Admin Quick Pill
+  const adminRow = document.createElement('div');
+  adminRow.className = 'flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 cursor-pointer transition text-xs';
+  adminRow.title = 'คลิกเพื่อใส่รหัสแอดมินหลัก';
+  adminRow.onclick = () => fillPasscodeAndLogin(adminPass);
+  adminRow.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-zinc-900 shrink-0"></span>
+      <span class="font-semibold text-zinc-900">แอดมินหลัก (Master Admin)</span>
+      <span class="text-[10px] text-zinc-400">สิทธิ์แอดมิน</span>
+    </div>
+    <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-800">${escapeHtml(adminPass)}</span>
+  `;
+  container.appendChild(adminRow);
+
+  // 2. Staff members (Writers, Editors, Posters)
   const staffList = teamMembers.filter(m => !m.isAdmin);
-
-  if (staffList.length === 0) {
-    container.innerHTML = `
-      <div class="text-center py-6 text-xs text-zinc-400">
-        ยังไม่มีรายชื่อคนเขียนบทในระบบ<br>
-        กรุณาเข้าสู่ระบบผ่านแท็บ "แอดมินหลัก" เพื่อเพิ่มรายชื่อคนเขียนบทครับ
-      </div>
-    `;
-    return;
-  }
-
   staffList.forEach(m => {
-    const initial = m.name.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
-    const isSelected = pendingLoginMember && pendingLoginMember.id === m.id;
-    const card = document.createElement('div');
-    card.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
-      isSelected
-        ? 'border-zinc-900 bg-zinc-100 shadow-sm'
-        : 'border-zinc-200 bg-zinc-50/70 hover:bg-zinc-100/80 hover:border-zinc-300'
-    }`;
-    card.onclick = () => selectMemberForLogin(m.id);
-
-    card.innerHTML = `
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center">
-          ${escapeHtml(initial)}
-        </div>
-        <div>
-          <div class="text-xs font-semibold text-zinc-900">${escapeHtml(m.name)}</div>
-          <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)}</div>
-        </div>
-      </div>
+    const pin = m.pin || '101';
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 cursor-pointer transition text-xs';
+    row.title = `คลิกเพื่อใส่รหัส ${m.name}`;
+    row.onclick = () => fillPasscodeAndLogin(pin);
+    row.innerHTML = `
       <div class="flex items-center gap-2">
-        ${m.pin ? '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-600 font-medium">มี PIN</span>' : '<span class="text-[10px] text-emerald-600 font-medium">กดเข้าได้เลย</span>'}
-        <span class="text-xs font-bold text-zinc-400">→</span>
+        <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+        <span class="font-medium text-zinc-800">${escapeHtml(m.name)}</span>
       </div>
+      <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-800">${escapeHtml(pin)}</span>
     `;
-    container.appendChild(card);
+    container.appendChild(row);
   });
 }
 
-function selectMemberForLogin(memberId) {
-  const m = teamMembers.find(x => x.id === memberId);
-  if (!m) return;
-  pendingLoginMember = m;
-  renderLoginMemberList();
+function fillPasscodeAndLogin(code) {
+  const input = document.getElementById('login-passcode-input');
+  if (input) input.value = code;
+  submitPasscodeLogin();
+}
 
-  const pinBox = document.getElementById('login-pin-box');
-  const selName = document.getElementById('login-selected-name');
-  const pinInput = document.getElementById('login-pin-input');
-  const errBox = document.getElementById('login-error-msg');
+function submitPasscodeLogin() {
+  const input = document.getElementById('login-passcode-input');
+  const errBox = document.getElementById('login-passcode-error');
+  const code = (input?.value || '').trim();
 
-  errBox.classList.add('hidden');
-  selName.textContent = m.name;
+  if (!code) {
+    if (errBox) {
+      errBox.textContent = 'กรุณากรอกรหัสประจำตัวหรือรหัสผ่าน';
+      errBox.classList.remove('hidden');
+    }
+    input?.focus();
+    return;
+  }
 
-  if (m.pin) {
-    pinBox.classList.remove('hidden');
-    pinInput.value = '';
-    pinInput.focus();
-  } else {
-    pinBox.classList.add('hidden');
-    // Log in directly
-    activeMember = m;
-    localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, m.id);
+  // 1. Check Master Admin Credentials (password or username)
+  const validAdminPwd = (adminCredentials.password || '123').trim();
+  const validAdminId = (adminCredentials.username || 'admin').trim().toLowerCase();
+
+  if (code === validAdminPwd || code.toLowerCase() === validAdminId || code === 'admin123') {
+    let adminUser = teamMembers.find(m => m.isAdmin);
+    if (!adminUser) {
+      adminUser = {
+        id: 'usr-admin',
+        name: `แอดมินหลัก (${adminCredentials.username || 'admin'})`,
+        role: 'manager',
+        pin: validAdminPwd,
+        color: 'bg-zinc-900 text-white',
+        isAdmin: true
+      };
+      teamMembers.unshift(adminUser);
+    } else {
+      adminUser.name = `แอดมินหลัก (${adminCredentials.username || 'admin'})`;
+    }
+    activeMember = adminUser;
+    localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, adminUser.id);
     updateActiveUserBadge();
     closeLoginScreen();
-    showToast(`👋 เข้าสู่ระบบในชื่อ: ${m.name}`);
-  }
-}
-
-function confirmMemberLogin() {
-  if (!pendingLoginMember) return;
-  const pinInput = document.getElementById('login-pin-input');
-  const errBox = document.getElementById('login-error-msg');
-  const val = (pinInput?.value || '').trim();
-
-  if (pendingLoginMember.pin && val !== pendingLoginMember.pin) {
-    errBox.textContent = '❌ รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
-    errBox.classList.remove('hidden');
+    showToast(`👑 ยืนยันรหัสถูกต้อง: เข้าสู่ระบบในฐานะ "แอดมินหลัก (Master Admin)"`);
     return;
   }
 
-  activeMember = pendingLoginMember;
-  localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, pendingLoginMember.id);
-  updateActiveUserBadge();
-  closeLoginScreen();
-  showToast(`✅ เข้าสู่ระบบสำเร็จ: ${pendingLoginMember.name}`);
-}
+  // 2. Check Team Members by PIN or partial name match
+  const matched = teamMembers.find(m => m.pin && String(m.pin).trim() === code) ||
+                  teamMembers.find(m => !m.isAdmin && m.name.toLowerCase().includes(code.toLowerCase()));
 
-// Master Admin Authentication
-function submitMasterAdminLogin() {
-  const idInput = document.getElementById('admin-login-id');
-  const pwdInput = document.getElementById('admin-login-pwd');
-  const errBox = document.getElementById('admin-login-error');
-
-  const inputId = (idInput?.value || '').trim();
-  const inputPwd = (pwdInput?.value || '').trim();
-
-  const validId = adminCredentials.username || 'admin';
-  const validPwd = adminCredentials.password || '123';
-
-  if (inputId !== validId || inputPwd !== validPwd) {
-    errBox.textContent = '❌ ID หรือรหัสผ่านแอดมินไม่ถูกต้อง';
-    errBox.classList.remove('hidden');
+  if (matched) {
+    activeMember = matched;
+    localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, matched.id);
+    updateActiveUserBadge();
+    closeLoginScreen();
+    showToast(`👋 ยืนยันรหัสถูกต้อง: สวัสดีคุณ ${matched.name}`);
     return;
   }
 
-  errBox.classList.add('hidden');
-
-  let adminUser = teamMembers.find(m => m.isAdmin);
-  if (!adminUser) {
-    adminUser = {
-      id: 'usr-admin',
-      name: `แอดมินหลัก (${validId})`,
-      role: 'manager',
-      pin: '',
-      color: 'bg-zinc-900 text-white',
-      isAdmin: true
-    };
-    teamMembers.unshift(adminUser);
-  } else {
-    adminUser.name = `แอดมินหลัก (${validId})`;
+  // 3. Invalid code
+  if (errBox) {
+    errBox.textContent = `❌ ไม่พบผู้ใช้งานสำหรับรหัส "${code}" กรุณาตรวจสอบรหัสอีกครั้ง`;
+    errBox.classList.remove('hidden');
   }
-
-  activeMember = adminUser;
-  localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, adminUser.id);
-  updateActiveUserBadge();
-  closeLoginScreen();
-  showToast(`👑 เข้าสู่ระบบแอดมินหลักเรียบร้อย! สามารถจัดการคนเขียนบทได้เลยครับ`);
-  openTeamModal();
+  input?.select();
 }
 
 // Admin Console: Team Member Management & Admin Settings
@@ -786,10 +739,16 @@ function renderTeamManageList() {
             ${escapeHtml(m.name)}
             ${isCurrent ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-medium">กำลังใช้งาน</span>' : ''}
           </div>
-          <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)} · PIN: ${m.pin ? escapeHtml(m.pin) : 'ไม่มี (กดเข้าได้เลย)'}</div>
+          <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)}</div>
         </div>
       </div>
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-zinc-100 px-2 py-1 rounded border border-zinc-200" title="แก้ไขรหัสเข้างานของพนักงาน">
+          <span class="text-[10px] text-zinc-500 font-medium">รหัส:</span>
+          <input type="text" value="${escapeHtml(m.pin || '')}" placeholder="PIN"
+            onchange="updateMemberPin('${m.id}', this.value)"
+            class="w-14 bg-white border border-zinc-300 rounded px-1 py-0.5 text-xs font-mono font-semibold text-zinc-800 focus:outline-none focus:border-zinc-500 text-center" />
+        </div>
         <button type="button" onclick="deleteTeamMember('${m.id}')" class="px-2 py-1 rounded text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition text-xs flex items-center gap-1" title="ลบรายชื่อ">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบ
         </button>
@@ -800,6 +759,16 @@ function renderTeamManageList() {
   lucide.createIcons();
 }
 
+function updateMemberPin(memberId, newPin) {
+  const m = teamMembers.find(x => x.id === memberId);
+  if (m) {
+    m.pin = String(newPin || '').trim();
+    saveState();
+    renderLoginQuickTags();
+    showToast(`🔑 อัปเดตรหัสของ "${m.name}" เป็น "${m.pin}" เรียบร้อยแล้ว`);
+  }
+}
+
 function deleteTeamMember(memberId) {
   const m = teamMembers.find(x => x.id === memberId);
   if (!m) return;
@@ -808,7 +777,7 @@ function deleteTeamMember(memberId) {
   teamMembers = teamMembers.filter(x => x.id !== memberId);
   saveState();
   renderTeamManageList();
-  renderLoginMemberList();
+  renderLoginQuickTags();
   populateAssigneeDropdown();
   showToast(`ลบรายชื่อ "${m.name}" เรียบร้อยแล้ว`);
 }
@@ -824,11 +793,16 @@ function addTeamMemberFromModal() {
     return;
   }
 
+  let pin = (pinEl?.value || '').trim();
+  if (!pin) {
+    pin = String(100 + teamMembers.length + 1);
+  }
+
   const newM = {
     id: 'usr-' + Date.now(),
     name,
     role: roleEl?.value || 'writer',
-    pin: (pinEl?.value || '').trim(),
+    pin,
     color: 'bg-zinc-800 text-white',
     isAdmin: false
   };
@@ -836,11 +810,11 @@ function addTeamMemberFromModal() {
   teamMembers.push(newM);
   saveState();
   nameEl.value = '';
-  pinEl.value = '';
+  if (pinEl) pinEl.value = '';
   renderTeamManageList();
-  renderLoginMemberList();
+  renderLoginQuickTags();
   populateAssigneeDropdown();
-  showToast(`➕ เพิ่มรายชื่อ "${name}" เข้าสู่ทีมเรียบร้อย`);
+  showToast(`➕ เพิ่มรายชื่อ "${name}" เรียบร้อย (รหัสประจำตัว: ${pin})`);
 }
 
 function handleUserSwitch(val) {

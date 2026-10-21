@@ -27,97 +27,56 @@
 <body id="board-bg" class="trello-bg-blue min-h-screen flex flex-col font-sans select-none text-zinc-900 overflow-hidden antialiased">
 
   <!-- =====================================================================
-       STUDIO LOGIN OVERLAY (แบ่งสิทธิ์: น้องคนเขียนบท vs แอดมินหลัก)
+       STUDIO PASSCODE LOGIN OVERLAY (กรอกรหัสเดียว ยืนยันตัวตนทันที)
   ====================================================================== -->
   <div id="login-screen" class="fixed inset-0 z-50 bg-[#f4f4f5] flex items-center justify-center p-4 overflow-y-auto" style="background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px); background-size: 20px 20px;">
-    <div class="w-full max-w-md bg-white border border-zinc-200/90 rounded-2xl shadow-[0_12px_40px_-12px_rgba(24,24,27,0.12)] overflow-hidden">
+    <div class="w-full max-w-sm bg-white border border-zinc-200/90 rounded-2xl shadow-[0_12px_40px_-12px_rgba(24,24,27,0.12)] overflow-hidden">
 
       <!-- Top Studio Header -->
-      <div class="px-6 pt-6 pb-4 border-b border-zinc-100">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-tight">
-            QC
-          </div>
-          <div>
-            <h1 class="text-base font-semibold text-zinc-900 tracking-tight">เข้าสู่ระบบ QC Board</h1>
-            <p class="text-xs text-zinc-500">เลือกประเภทผู้ใช้งานเพื่อเข้าสู่กระดานส่งงาน</p>
-          </div>
+      <div class="px-6 pt-6 pb-4 border-b border-zinc-100 text-center">
+        <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm mx-auto shadow-sm">
+          QC
         </div>
-
-        <!-- Tab Switcher: Staff vs Master Admin -->
-        <div class="mt-4 bg-zinc-100 p-0.5 rounded-lg flex items-center text-xs border border-zinc-200/80">
-          <button id="tab-login-staff" type="button" onclick="switchLoginTab('staff')" class="flex-1 py-1.5 rounded-md font-medium bg-white text-zinc-900 shadow-sm transition text-center">
-            ทีมงาน / คนเขียนบท
-          </button>
-          <button id="tab-login-admin" type="button" onclick="switchLoginTab('admin')" class="flex-1 py-1.5 rounded-md font-medium text-zinc-500 hover:text-zinc-900 transition text-center">
-            แอดมินหลัก (Admin)
-          </button>
-        </div>
+        <h1 class="text-base font-semibold text-zinc-900 tracking-tight mt-3">เข้าสู่ระบบ QC Board</h1>
+        <p class="text-xs text-zinc-500 mt-0.5">กรอกรหัสประจำตัว หรือรหัสแอดมิน เพื่อเข้าใช้งาน</p>
       </div>
 
-      <!-- TAB 1: STAFF LOGIN (น้องคนเขียนบท & ทีมงาน) -->
-      <div id="login-panel-staff" class="p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">เลือกชื่อของคุณเพื่อเริ่มงาน</label>
-          <span class="text-[11px] text-zinc-400">*แอดมินเป็นคนเพิ่มรายชื่อ</span>
-        </div>
-
-        <!-- Member Cards Grid -->
-        <div id="login-member-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
-          <!-- Injected by renderLoginMemberList() -->
-        </div>
-
-        <!-- Staff PIN Input Box (Appears only if Admin set a PIN for this staff) -->
-        <div id="login-pin-box" class="hidden pt-2 border-t border-zinc-100 space-y-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-zinc-600">รหัส PIN ของ <b id="login-selected-name" class="text-zinc-900"></b></span>
-            <span id="login-pin-hint" class="font-mono text-[11px] text-zinc-400"></span>
-          </div>
-          <div class="flex gap-2">
-            <input id="login-pin-input" type="password" inputmode="numeric" maxlength="12" placeholder="กรอกรหัส PIN..."
-              onkeydown="if(event.key==='Enter'){event.preventDefault();confirmMemberLogin();}"
-              class="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400" />
-            <button type="button" onclick="confirmMemberLogin()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-2 rounded-lg transition shadow-sm">
-              เข้าสู่ระบบ →
+      <!-- Single Passcode Input Body -->
+      <div class="p-6 space-y-4">
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-zinc-700">รหัสผ่าน / PIN ประจำตัว</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+              <i data-lucide="key-round" class="w-4 h-4"></i>
+            </div>
+            <input id="login-passcode-input" type="password" placeholder="กรอกรหัส (เช่น 101, 102, 123)"
+              autofocus
+              onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasscodeLogin();}"
+              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg pl-9 pr-10 py-2.5 text-sm font-mono text-zinc-900 focus:outline-none focus:border-zinc-500 tracking-wider" />
+            <button type="button" onclick="togglePasswordVisibility('login-passcode-input', this)"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-700 transition" title="แสดง/ซ่อนรหัส">
+              <i data-lucide="eye" class="w-4 h-4"></i>
             </button>
           </div>
-          <p id="login-error-msg" class="hidden text-[11px] text-rose-600 font-medium"></p>
-        </div>
-      </div>
-
-      <!-- TAB 2: MASTER ADMIN LOGIN (แอดมินหลัก) -->
-      <div id="login-panel-admin" class="hidden p-6 space-y-4">
-        <div class="bg-zinc-50 p-3.5 rounded-lg border border-zinc-200 text-xs text-zinc-600 space-y-1">
-          <div class="font-semibold text-zinc-900 flex items-center gap-1.5">
-            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
-            สิทธิ์แอดมินหลัก (Super Admin)
-          </div>
-          <p class="text-[11px] text-zinc-500">สำหรับหัวหน้าเพื่อเข้าจัดการเพิ่ม/ลบรายชื่อคนเขียนบท อนุมัติงาน และตั้งค่าระบบ</p>
+          <p id="login-passcode-error" class="hidden text-xs text-rose-600 font-medium"></p>
         </div>
 
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-zinc-600 mb-1">ID แอดมิน (Username)</label>
-            <input id="admin-login-id" type="text" placeholder="ID แอดมิน (ค่าเริ่มต้น: admin)"
-              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-400" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-zinc-600 mb-1">รหัสผ่านแอดมิน (Password)</label>
-            <input id="admin-login-pwd" type="password" placeholder="รหัสผ่าน (ค่าเริ่มต้น: admin123)"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();submitMasterAdminLogin();}"
-              class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400" />
-            <div class="flex justify-between items-center mt-1">
-              <span class="text-[10px] text-zinc-400 font-mono">ค่าเริ่มต้น: ID: admin / Pass: admin123</span>
-              <span class="text-[10px] text-zinc-500">*เปลี่ยนได้ในระบบ</span>
-            </div>
-          </div>
-        </div>
-
-        <p id="admin-login-error" class="hidden text-xs text-rose-600 font-medium"></p>
-
-        <button type="button" onclick="submitMasterAdminLogin()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
-          <i data-lucide="lock" class="w-3.5 h-3.5"></i> เข้าสู่ระบบแอดมินหลัก
+        <button type="button" onclick="submitPasscodeLogin()"
+          class="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+          <span>ยืนยันรหัสเข้าสู่ระบบ</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </button>
+
+        <!-- Quick Code Reference Table for Studio Convenience -->
+        <div class="pt-3 border-t border-zinc-100 space-y-2">
+          <div class="flex items-center justify-between text-[11px] text-zinc-400">
+            <span class="font-medium uppercase tracking-wider">รหัสประจำตัวในระบบ</span>
+            <span>คลิกเพื่อใส่รหัส</span>
+          </div>
+          <div id="login-quick-tags" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <!-- Populated dynamically by renderLoginQuickTags() -->
+          </div>
+        </div>
       </div>
 
     </div>
