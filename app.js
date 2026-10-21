@@ -18,11 +18,11 @@ const DEFAULT_ADMIN_CREDS = {
 };
 
 const DEFAULT_TEAM_MEMBERS = [
-  { id: 'usr-admin', name: 'หัวหน้าหลัก (Admin / QC)', role: 'manager', pin: '123', color: 'bg-zinc-900 text-white', isAdmin: true },
-  { id: 'usr-2', name: 'น้องมายด์ (คนเขียนบท)', role: 'writer', pin: '101', color: 'bg-sky-600 text-white' },
-  { id: 'usr-3', name: 'น้องพลอย (คนเขียนบท)', role: 'writer', pin: '102', color: 'bg-violet-600 text-white' },
-  { id: 'usr-4', name: 'ทีมตัดต่อ (Editor)', role: 'editor', pin: '201', color: 'bg-amber-600 text-white' },
-  { id: 'usr-5', name: 'แอดมินเพจ (คนลงโพสต์)', role: 'poster', pin: '301', color: 'bg-emerald-600 text-white' }
+  { id: 'usr-admin', name: 'หัวหน้าหลัก (Admin / QC)', username: 'admin', password: '123', role: 'manager', pin: '123', color: 'bg-zinc-900 text-white', isAdmin: true },
+  { id: 'usr-2', name: 'น้องมายด์ (คนเขียนบท)', username: 'mind', password: '123', role: 'writer', pin: '101', color: 'bg-sky-600 text-white', isAdmin: false },
+  { id: 'usr-3', name: 'น้องพลอย (คนเขียนบท)', username: 'ploy', password: '123', role: 'writer', pin: '102', color: 'bg-violet-600 text-white', isAdmin: false },
+  { id: 'usr-4', name: 'ทีมตัดต่อ (Editor)', username: 'editor', password: '123', role: 'editor', pin: '201', color: 'bg-amber-600 text-white', isAdmin: false },
+  { id: 'usr-5', name: 'แอดมินเพจ (คนลงโพสต์)', username: 'poster', password: '123', role: 'poster', pin: '301', color: 'bg-emerald-600 text-white', isAdmin: false }
 ];
 
 const DEFAULT_COLUMNS = [
@@ -384,10 +384,20 @@ function loadTeamState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_TEAM);
     teamMembers = saved ? JSON.parse(saved) : [...DEFAULT_TEAM_MEMBERS];
-    const defaultPins = { 'usr-admin': '123', 'usr-2': '101', 'usr-3': '102', 'usr-4': '201', 'usr-5': '301' };
+    const defaultCreds = {
+      'usr-admin': { username: 'admin', password: '123' },
+      'usr-2': { username: 'mind', password: '123' },
+      'usr-3': { username: 'ploy', password: '123' },
+      'usr-4': { username: 'editor', password: '123' },
+      'usr-5': { username: 'poster', password: '123' }
+    };
     teamMembers.forEach(m => {
-      if (!m.pin && defaultPins[m.id]) {
-        m.pin = defaultPins[m.id];
+      const def = defaultCreds[m.id];
+      if (!m.username) {
+        m.username = (def && def.username) || (m.name ? m.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '') || m.id.replace('usr-', 'user');
+      }
+      if (!m.password) {
+        m.password = (def && def.password) || m.pin || '123';
       }
     });
   } catch (e) {
@@ -454,24 +464,22 @@ function populateAssigneeDropdown() {
 }
 
 // ============================================================================
-// PASSCODE LOGIN SYSTEM (รหัสเดียว ยืนยันตัวตนทันที)
+// ID & PASSWORD LOGIN SYSTEM (ล็อกอินด้วย ID และ Password ที่แอดมินสร้าง)
 // ============================================================================
 function openLoginScreen() {
   const screen = document.getElementById('login-screen');
-  const input = document.getElementById('login-passcode-input');
-  const errBox = document.getElementById('login-passcode-error');
+  const userInput = document.getElementById('login-username-input');
+  const passInput = document.getElementById('login-password-input');
+  const errBox = document.getElementById('login-auth-error');
 
   if (errBox) errBox.classList.add('hidden');
-  if (input) {
-    input.value = '';
-    setTimeout(() => input.focus(), 120);
-  }
-
-  renderLoginQuickTags();
+  if (userInput) userInput.value = '';
+  if (passInput) passInput.value = '';
 
   screen.classList.remove('hidden');
   screen.classList.add('flex');
   lucide.createIcons();
+  setTimeout(() => userInput?.focus(), 120);
 }
 
 function closeLoginScreen() {
@@ -480,113 +488,77 @@ function closeLoginScreen() {
   screen.classList.remove('flex');
 }
 
-function renderLoginQuickTags() {
-  const container = document.getElementById('login-quick-tags');
-  if (!container) return;
-  container.innerHTML = '';
+function submitIdPassLogin() {
+  const userInput = document.getElementById('login-username-input');
+  const passInput = document.getElementById('login-password-input');
+  const errBox = document.getElementById('login-auth-error');
 
-  const adminPass = adminCredentials.password || '123';
+  const username = (userInput?.value || '').trim().toLowerCase();
+  const password = (passInput?.value || '').trim();
 
-  // 1. Master Admin Quick Pill
-  const adminRow = document.createElement('div');
-  adminRow.className = 'flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 cursor-pointer transition text-xs';
-  adminRow.title = 'คลิกเพื่อใส่รหัสแอดมินหลัก';
-  adminRow.onclick = () => fillPasscodeAndLogin(adminPass);
-  adminRow.innerHTML = `
-    <div class="flex items-center gap-2">
-      <span class="w-2 h-2 rounded-full bg-zinc-900 shrink-0"></span>
-      <span class="font-semibold text-zinc-900">แอดมินหลัก (Master Admin)</span>
-      <span class="text-[10px] text-zinc-400">สิทธิ์แอดมิน</span>
-    </div>
-    <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-800">${escapeHtml(adminPass)}</span>
-  `;
-  container.appendChild(adminRow);
-
-  // 2. Staff members (Writers, Editors, Posters)
-  const staffList = teamMembers.filter(m => !m.isAdmin);
-  staffList.forEach(m => {
-    const pin = m.pin || '101';
-    const row = document.createElement('div');
-    row.className = 'flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 cursor-pointer transition text-xs';
-    row.title = `คลิกเพื่อใส่รหัส ${m.name}`;
-    row.onclick = () => fillPasscodeAndLogin(pin);
-    row.innerHTML = `
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
-        <span class="font-medium text-zinc-800">${escapeHtml(m.name)}</span>
-      </div>
-      <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-800">${escapeHtml(pin)}</span>
-    `;
-    container.appendChild(row);
-  });
-}
-
-function fillPasscodeAndLogin(code) {
-  const input = document.getElementById('login-passcode-input');
-  if (input) input.value = code;
-  submitPasscodeLogin();
-}
-
-function submitPasscodeLogin() {
-  const input = document.getElementById('login-passcode-input');
-  const errBox = document.getElementById('login-passcode-error');
-  const code = (input?.value || '').trim();
-
-  if (!code) {
+  if (!username || !password) {
     if (errBox) {
-      errBox.textContent = 'กรุณากรอกรหัสประจำตัวหรือรหัสผ่าน';
+      errBox.textContent = '❌ กรุณากรอกทั้ง ID และรหัสผ่านให้ครบถ้วน';
       errBox.classList.remove('hidden');
     }
-    input?.focus();
+    if (!username) userInput?.focus();
+    else passInput?.focus();
     return;
   }
 
-  // 1. Check Master Admin Credentials (password or username)
-  const validAdminPwd = (adminCredentials.password || '123').trim();
+  // 1. Check Master Admin Credentials
   const validAdminId = (adminCredentials.username || 'admin').trim().toLowerCase();
+  const validAdminPwd = (adminCredentials.password || '123').trim();
 
-  if (code === validAdminPwd || code.toLowerCase() === validAdminId || code === 'admin123') {
+  if ((username === validAdminId || username === 'admin') && (password === validAdminPwd || password === 'admin123')) {
     let adminUser = teamMembers.find(m => m.isAdmin);
     if (!adminUser) {
       adminUser = {
         id: 'usr-admin',
         name: `แอดมินหลัก (${adminCredentials.username || 'admin'})`,
+        username: validAdminId,
+        password: validAdminPwd,
         role: 'manager',
-        pin: validAdminPwd,
         color: 'bg-zinc-900 text-white',
         isAdmin: true
       };
       teamMembers.unshift(adminUser);
     } else {
       adminUser.name = `แอดมินหลัก (${adminCredentials.username || 'admin'})`;
+      adminUser.username = validAdminId;
+      adminUser.password = validAdminPwd;
     }
     activeMember = adminUser;
     localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, adminUser.id);
     updateActiveUserBadge();
     closeLoginScreen();
-    showToast(`👑 ยืนยันรหัสถูกต้อง: เข้าสู่ระบบในฐานะ "แอดมินหลัก (Master Admin)"`);
+    showToast(`👑 เข้าสู่ระบบสำเร็จในฐานะ "แอดมินหลัก (Master Admin)"`);
     return;
   }
 
-  // 2. Check Team Members by PIN or partial name match
-  const matched = teamMembers.find(m => m.pin && String(m.pin).trim() === code) ||
-                  teamMembers.find(m => !m.isAdmin && m.name.toLowerCase().includes(code.toLowerCase()));
+  // 2. Check Staff / Team Members (match username or member name, and exact password)
+  const matched = teamMembers.find(m => {
+    const mUser = String(m.username || '').trim().toLowerCase();
+    const mPass = String(m.password || m.pin || '').trim();
+    const mName = String(m.name || '').trim().toLowerCase();
+    return (mUser === username || mName === username || m.id.toLowerCase() === username) && mPass === password;
+  });
 
   if (matched) {
     activeMember = matched;
     localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, matched.id);
     updateActiveUserBadge();
     closeLoginScreen();
-    showToast(`👋 ยืนยันรหัสถูกต้อง: สวัสดีคุณ ${matched.name}`);
+    showToast(`👋 ยินดีต้อนรับคุณ ${matched.name} เข้าสู่ระบบเรียบร้อย`);
     return;
   }
 
-  // 3. Invalid code
+  // 3. Authentication Failed
   if (errBox) {
-    errBox.textContent = `❌ ไม่พบผู้ใช้งานสำหรับรหัส "${code}" กรุณาตรวจสอบรหัสอีกครั้ง`;
+    errBox.textContent = '❌ ID หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบหรือติดต่อแอดมินหลัก';
     errBox.classList.remove('hidden');
   }
-  input?.select();
+  passInput?.select();
 }
 
 // Admin Console: Team Member Management & Admin Settings
@@ -730,24 +702,28 @@ function renderTeamManageList() {
     const row = document.createElement('div');
     row.className = 'p-3 flex items-center justify-between gap-3 hover:bg-zinc-50 transition text-xs';
     row.innerHTML = `
-      <div class="flex items-center gap-3">
-        <div class="w-7 h-7 rounded-full bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-full bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center shrink-0">
           ${escapeHtml(initial)}
         </div>
-        <div>
-          <div class="font-semibold text-zinc-900 flex items-center gap-1.5">
+        <div class="min-w-0">
+          <div class="font-semibold text-zinc-900 flex items-center gap-1.5 truncate">
             ${escapeHtml(m.name)}
-            ${isCurrent ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-medium">กำลังใช้งาน</span>' : ''}
+            ${isCurrent ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-medium shrink-0">กำลังใช้งาน</span>' : ''}
           </div>
           <div class="text-[11px] text-zinc-500">${escapeHtml(roleLabels[m.role] || m.role)}</div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5 bg-zinc-100 px-2 py-1 rounded border border-zinc-200" title="แก้ไขรหัสเข้างานของพนักงาน">
-          <span class="text-[10px] text-zinc-500 font-medium">รหัส:</span>
-          <input type="text" value="${escapeHtml(m.pin || '')}" placeholder="PIN"
-            onchange="updateMemberPin('${m.id}', this.value)"
-            class="w-14 bg-white border border-zinc-300 rounded px-1 py-0.5 text-xs font-mono font-semibold text-zinc-800 focus:outline-none focus:border-zinc-500 text-center" />
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 bg-zinc-100 px-2 py-1 rounded border border-zinc-200">
+          <span class="text-[10px] text-zinc-500 font-semibold font-mono">ID:</span>
+          <input type="text" value="${escapeHtml(m.username || '')}" placeholder="ID"
+            onchange="updateMemberUsername('${m.id}', this.value)"
+            class="w-20 bg-white border border-zinc-300 rounded px-1 py-0.5 text-xs font-mono font-medium text-zinc-800 focus:outline-none focus:border-zinc-500 text-center" />
+          <span class="text-[10px] text-zinc-500 font-semibold font-mono ml-1">Pass:</span>
+          <input type="text" value="${escapeHtml(m.password || m.pin || '')}" placeholder="Pass"
+            onchange="updateMemberPassword('${m.id}', this.value)"
+            class="w-16 bg-white border border-zinc-300 rounded px-1 py-0.5 text-xs font-mono font-medium text-zinc-800 focus:outline-none focus:border-zinc-500 text-center" />
         </div>
         <button type="button" onclick="deleteTeamMember('${m.id}')" class="px-2 py-1 rounded text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition text-xs flex items-center gap-1" title="ลบรายชื่อ">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบ
@@ -759,13 +735,34 @@ function renderTeamManageList() {
   lucide.createIcons();
 }
 
-function updateMemberPin(memberId, newPin) {
+function updateMemberUsername(memberId, newUsername) {
   const m = teamMembers.find(x => x.id === memberId);
   if (m) {
-    m.pin = String(newPin || '').trim();
+    const val = String(newUsername || '').trim().toLowerCase();
+    if (!val) {
+      alert('ID ไม่สามารถเว้นว่างได้');
+      renderTeamManageList();
+      return;
+    }
+    m.username = val;
     saveState();
-    renderLoginQuickTags();
-    showToast(`🔑 อัปเดตรหัสของ "${m.name}" เป็น "${m.pin}" เรียบร้อยแล้ว`);
+    showToast(`🔑 เปลี่ยน ID ของ "${m.name}" เป็น "${val}" เรียบร้อยแล้ว`);
+  }
+}
+
+function updateMemberPassword(memberId, newPass) {
+  const m = teamMembers.find(x => x.id === memberId);
+  if (m) {
+    const val = String(newPass || '').trim();
+    if (!val) {
+      alert('รหัสผ่านไม่สามารถเว้นว่างได้');
+      renderTeamManageList();
+      return;
+    }
+    m.password = val;
+    m.pin = val;
+    saveState();
+    showToast(`🔑 เปลี่ยนรหัสผ่านของ "${m.name}" เรียบร้อยแล้ว`);
   }
 }
 
@@ -777,7 +774,6 @@ function deleteTeamMember(memberId) {
   teamMembers = teamMembers.filter(x => x.id !== memberId);
   saveState();
   renderTeamManageList();
-  renderLoginQuickTags();
   populateAssigneeDropdown();
   showToast(`ลบรายชื่อ "${m.name}" เรียบร้อยแล้ว`);
 }
@@ -785,24 +781,38 @@ function deleteTeamMember(memberId) {
 function addTeamMemberFromModal() {
   const nameEl = document.getElementById('team-new-name');
   const roleEl = document.getElementById('team-new-role');
-  const pinEl = document.getElementById('team-new-pin');
+  const userEl = document.getElementById('team-new-username');
+  const passEl = document.getElementById('team-new-password');
 
   const name = (nameEl?.value || '').trim();
   if (!name) {
-    alert('กรุณากรอกชื่อพนักงานหรือคนเขียนบท');
+    alert('กรุณากรอกชื่อพนักงาน');
     return;
   }
 
-  let pin = (pinEl?.value || '').trim();
-  if (!pin) {
-    pin = String(100 + teamMembers.length + 1);
+  let username = (userEl?.value || '').trim().toLowerCase();
+  if (!username) {
+    username = 'user' + (teamMembers.length + 1);
+  }
+
+  let password = (passEl?.value || '').trim();
+  if (!password) {
+    password = '123';
+  }
+
+  // Check if username is already taken by another user
+  if (teamMembers.some(m => String(m.username || '').toLowerCase() === username)) {
+    alert(`❌ ID "${username}" มีผู้ใช้งานแล้ว กรุณาตั้ง ID อื่น`);
+    return;
   }
 
   const newM = {
     id: 'usr-' + Date.now(),
     name,
     role: roleEl?.value || 'writer',
-    pin,
+    username,
+    password,
+    pin: password,
     color: 'bg-zinc-800 text-white',
     isAdmin: false
   };
@@ -810,11 +820,11 @@ function addTeamMemberFromModal() {
   teamMembers.push(newM);
   saveState();
   nameEl.value = '';
-  if (pinEl) pinEl.value = '';
+  if (userEl) userEl.value = '';
+  if (passEl) passEl.value = '';
   renderTeamManageList();
-  renderLoginQuickTags();
   populateAssigneeDropdown();
-  showToast(`➕ เพิ่มรายชื่อ "${name}" เรียบร้อย (รหัสประจำตัว: ${pin})`);
+  showToast(`➕ สร้าง ID ให้ "${name}" เรียบร้อย (ID: ${username} / Pass: ${password})`);
 }
 
 function handleUserSwitch(val) {
