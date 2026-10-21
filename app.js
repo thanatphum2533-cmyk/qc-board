@@ -754,13 +754,17 @@ function loadState() {
   }
 }
 
-let lastSyncedUpdatedAt = 0;
+const STORAGE_KEY_UPDATED_AT = 'qc_board_updated_at_v4';
+let lastSyncedUpdatedAt = Number(localStorage.getItem(STORAGE_KEY_UPDATED_AT) || 0);
 let officeLanUrl = '';
 
 function saveState() {
+  const nowTs = Date.now();
+  lastSyncedUpdatedAt = nowTs;
   localStorage.setItem(STORAGE_KEY_COLUMNS, JSON.stringify(columns));
   localStorage.setItem(STORAGE_KEY_CARDS, JSON.stringify(cards));
   localStorage.setItem(STORAGE_KEY_DICT, JSON.stringify(typoDict));
+  localStorage.setItem(STORAGE_KEY_UPDATED_AT, String(nowTs));
   updateStats();
 
   // Sync to shared organization database on server (/api/state)
@@ -768,6 +772,7 @@ function saveState() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      updatedAt: nowTs,
       columns,
       cards,
       typoDict,
@@ -777,7 +782,10 @@ function saveState() {
   })
     .then(r => r.json())
     .then(res => {
-      if (res && res.updatedAt) lastSyncedUpdatedAt = res.updatedAt;
+      if (res && res.updatedAt) {
+        lastSyncedUpdatedAt = res.updatedAt;
+        localStorage.setItem(STORAGE_KEY_UPDATED_AT, String(res.updatedAt));
+      }
     })
     .catch(() => {});
 }
@@ -798,18 +806,35 @@ async function syncFromServerState(isInitial = false) {
     }
     if (json.hasData && json.data) {
       const remote = json.data;
-      if (isInitial || (remote.updatedAt && remote.updatedAt > lastSyncedUpdatedAt && !activeCardId)) {
-        lastSyncedUpdatedAt = remote.updatedAt || Date.now();
-        if (Array.isArray(remote.columns) && remote.columns.length > 0) columns = remote.columns;
-        if (Array.isArray(remote.cards)) cards = remote.cards;
-        if (Array.isArray(remote.typoDict) && remote.typoDict.length > 0) typoDict = remote.typoDict;
+      const remoteTs = Number(remote.updatedAt || 0);
+      const localTs = Number(localStorage.getItem(STORAGE_KEY_UPDATED_AT) || 0);
+
+      // If remote server has newer data than our browser, pull it in!
+      if (remoteTs > localTs && !activeCardId) {
+        lastSyncedUpdatedAt = remoteTs;
+        localStorage.setItem(STORAGE_KEY_UPDATED_AT, String(remoteTs));
+        if (Array.isArray(remote.columns) && remote.columns.length > 0) {
+          columns = remote.columns;
+          localStorage.setItem(STORAGE_KEY_COLUMNS, JSON.stringify(columns));
+        }
+        if (Array.isArray(remote.cards)) {
+          cards = remote.cards;
+          localStorage.setItem(STORAGE_KEY_CARDS, JSON.stringify(cards));
+        }
+        if (Array.isArray(remote.typoDict) && remote.typoDict.length > 0) {
+          typoDict = remote.typoDict;
+          localStorage.setItem(STORAGE_KEY_DICT, JSON.stringify(typoDict));
+        }
         if (remote.boardTitle && document.getElementById('board-title-input')) {
           document.getElementById('board-title-input').value = remote.boardTitle;
         }
         renderCurrentView();
+      } else if (localTs > remoteTs) {
+        // Our browser has newer data than the server (e.g. after Vercel cold start), push it up!
+        saveState();
       }
-    } else if (isInitial) {
-      // Seed initial server DB with our current board state
+    } else {
+      // Server has no data yet -> push our browser's saved state up to the server!
       saveState();
     }
   } catch (e) {}
