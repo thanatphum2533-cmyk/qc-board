@@ -10,6 +10,7 @@ const STORAGE_KEY_THEME = 'qc_board_theme_v4';
 const STORAGE_KEY_TITLE = 'qc_board_title_v4';
 const STORAGE_KEY_TEAM = 'qc_board_team_v4';
 const STORAGE_KEY_ACTIVE_MEMBER = 'qc_board_active_member_v4';
+const STORAGE_KEY_LOGGED_IN = 'qc_board_logged_in_v4';
 const STORAGE_KEY_ADMIN_CREDS = 'qc_board_admin_creds_v4';
 
 const DEFAULT_ADMIN_CREDS = {
@@ -466,6 +467,21 @@ function populateAssigneeDropdown() {
 // ============================================================================
 // ID & PASSWORD LOGIN SYSTEM (ล็อกอินด้วย ID และ Password ที่แอดมินสร้าง)
 // ============================================================================
+function checkLoginSession() {
+  const isLoggedOut = localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'false';
+  const savedActiveId = localStorage.getItem(STORAGE_KEY_ACTIVE_MEMBER);
+  const currentMember = teamMembers.find(m => m.id === savedActiveId);
+
+  if (isLoggedOut || (!savedActiveId && !currentMember)) {
+    openLoginScreen();
+  } else {
+    // Already has an active session: stay logged in across page refreshes!
+    if (currentMember) activeMember = currentMember;
+    localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
+    closeLoginScreen();
+  }
+}
+
 function openLoginScreen() {
   const screen = document.getElementById('login-screen');
   const userInput = document.getElementById('login-username-input');
@@ -486,6 +502,13 @@ function closeLoginScreen() {
   const screen = document.getElementById('login-screen');
   screen.classList.add('hidden');
   screen.classList.remove('flex');
+}
+
+function logoutUser() {
+  localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'false');
+  closeTeamModal();
+  openLoginScreen();
+  showToast('🔒 ออกจากระบบเรียบร้อยแล้ว');
 }
 
 function submitIdPassLogin() {
@@ -530,6 +553,7 @@ function submitIdPassLogin() {
     }
     activeMember = adminUser;
     localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, adminUser.id);
+    localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
     updateActiveUserBadge();
     closeLoginScreen();
     showToast(`👑 เข้าสู่ระบบสำเร็จในฐานะ "แอดมินหลัก (Master Admin)"`);
@@ -547,6 +571,7 @@ function submitIdPassLogin() {
   if (matched) {
     activeMember = matched;
     localStorage.setItem(STORAGE_KEY_ACTIVE_MEMBER, matched.id);
+    localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
     updateActiveUserBadge();
     closeLoginScreen();
     showToast(`👋 ยินดีต้อนรับคุณ ${matched.name} เข้าสู่ระบบเรียบร้อย`);
@@ -2985,6 +3010,7 @@ function startLiveClock() {
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   updateActiveUserBadge();
+  checkLoginSession();
   renderCurrentView();
   startLiveClock();
   syncFromServerState(true);

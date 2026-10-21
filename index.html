@@ -29,7 +29,7 @@
   <!-- =====================================================================
        STUDIO ID & PASSWORD LOGIN OVERLAY (ล็อกอินด้วย ID และ Password ที่แอดมินสร้าง)
   ====================================================================== -->
-  <div id="login-screen" class="fixed inset-0 z-50 bg-[#f4f4f5] flex items-center justify-center p-4 overflow-y-auto" style="background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px); background-size: 20px 20px;">
+  <div id="login-screen" class="fixed inset-0 z-50 bg-[#f4f4f5] hidden items-center justify-center p-4 overflow-y-auto" style="background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px); background-size: 20px 20px;">
     <div class="w-full max-w-sm bg-white border border-zinc-200/90 rounded-2xl shadow-[0_12px_40px_-12px_rgba(24,24,27,0.12)] overflow-hidden">
 
       <!-- Top Header -->
@@ -152,7 +152,7 @@
         <button type="button" onclick="openTeamModal()" class="px-1.5 py-1 text-zinc-500 hover:text-zinc-900 border-l border-zinc-200/80 transition" title="เพิ่ม/ลบรายชื่อคนเขียนบท">
           <i data-lucide="users" class="w-3.5 h-3.5"></i>
         </button>
-        <button type="button" onclick="openLoginScreen()" class="px-2 py-1 text-[11px] font-medium text-zinc-500 hover:text-rose-600 border-l border-zinc-200/80 transition" title="สลับบัญชีผู้ใช้งาน / ล็อกอินใหม่">
+        <button type="button" onclick="logoutUser()" class="px-2 py-1 text-[11px] font-medium text-zinc-500 hover:text-rose-600 border-l border-zinc-200/80 transition" title="สลับบัญชีผู้ใช้งาน / ล็อกอินใหม่">
           สลับบัญชี
         </button>
       </div>
@@ -734,7 +734,7 @@
       </div>
 
       <div class="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between">
-        <button type="button" onclick="closeTeamModal();openLoginScreen();" class="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1.5">
+        <button type="button" onclick="logoutUser()" class="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1.5">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i> สลับบัญชี / ออกจากระบบ
         </button>
         <button type="button" onclick="closeTeamModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md">
