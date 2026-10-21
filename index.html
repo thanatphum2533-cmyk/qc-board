@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QC Board — กระดานส่งงานคอนเทนต์ & ตรวจคำผิด</title>
+  <title>QC Board — Content Editorial & Proofreading Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -14,8 +14,9 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Prompt', 'sans-serif'],
-            body: ['Sarabun', 'sans-serif'],
+            sans: ['Anuphan', 'IBM Plex Sans Thai', 'sans-serif'],
+            body: ['IBM Plex Sans Thai', 'Anuphan', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
           }
         }
       }
@@ -23,421 +24,446 @@
   </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body id="board-bg" class="trello-bg-blue min-h-screen flex flex-col font-sans select-none text-slate-800 overflow-hidden">
+<body id="board-bg" class="trello-bg-blue min-h-screen flex flex-col font-sans select-none text-zinc-900 overflow-hidden antialiased">
 
   <!-- =====================================================================
-       TRELLO TOP GLOBAL NAVBAR
+       STUDIO LOGIN OVERLAY (หน้าล็อกอินสำหรับน้องคนเขียนบท & ทีมงาน + เพิ่ม/ลบรายชื่อได้)
   ====================================================================== -->
-  <nav class="bg-black/25 backdrop-blur-md border-b border-white/15 px-4 py-2 flex items-center justify-between gap-3 text-white z-30">
-    <!-- Left: Trello Logo & Board Title -->
-    <div class="flex items-center gap-3 flex-wrap">
-      <div class="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-2.5 py-1.5 rounded-md cursor-pointer transition">
-        <i data-lucide="layout-kanban" class="w-5 h-5 text-white"></i>
-        <span class="font-bold tracking-wide text-sm">QC Board</span>
+  <div id="login-screen" class="fixed inset-0 z-50 bg-[#f4f4f5] flex items-center justify-center p-4 overflow-y-auto" style="background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px); background-size: 20px 20px;">
+    <div class="w-full max-w-md bg-white border border-zinc-200/90 rounded-2xl shadow-[0_12px_40px_-12px_rgba(24,24,27,0.12)] overflow-hidden">
+
+      <!-- Top Studio Header -->
+      <div class="px-6 pt-6 pb-4 border-b border-zinc-100">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-tight">
+              QC
+            </div>
+            <div>
+              <h1 class="text-base font-semibold text-zinc-900 tracking-tight">เข้าสู่ระบบห้องทำงาน QC Board</h1>
+              <p class="text-xs text-zinc-500">เลือกบัญชีผู้ใช้งานของคุณเพื่อบันทึกชื่อในการส่งงานและประวัติแก้ไข</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <input id="board-title-input" type="text" value="📌 QC Board — กระดานส่งงานคอนเทนต์ & ตรวจคำผิด"
-        onchange="saveBoardTitle(this.value)"
-        class="bg-transparent hover:bg-white/15 focus:bg-white focus:text-slate-900 font-bold text-sm sm:text-base px-2.5 py-1 rounded-md focus:outline-none transition w-72 sm:w-96 truncate" />
+      <!-- Member Selection List -->
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">รายชื่อทีมงานในระบบ</label>
+          <button type="button" onclick="toggleLoginAddMemberForm()" class="text-xs font-medium text-zinc-700 hover:text-zinc-900 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200/80 px-2.5 py-1 rounded-md transition">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> เพิ่ม / ลบคนเขียนบท
+          </button>
+        </div>
 
-      <!-- View Switcher: Board vs Calendar (Like Trello Views) -->
-      <div class="bg-black/25 p-0.5 rounded-lg flex items-center text-xs border border-white/15">
-        <button id="view-btn-board" onclick="switchView('board')" class="px-3 py-1.5 rounded-md font-semibold bg-white text-slate-900 shadow flex items-center gap-1.5 transition">
-          <i data-lucide="kanban" class="w-3.5 h-3.5"></i> กระดาน (Board)
-        </button>
-        <button id="view-btn-calendar" onclick="switchView('calendar')" class="px-3 py-1.5 rounded-md font-medium text-white/85 hover:text-white flex items-center gap-1.5 transition">
-          <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> ปฏิทินคิวโพสต์ (Calendar)
-        </button>
-      </div>
-    </div>
+        <!-- Member Cards Grid -->
+        <div id="login-member-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+          <!-- Injected by renderLoginMemberList() -->
+        </div>
 
-    <!-- Right: Search, Role Switch, Background Theme, Dictionary -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <!-- Search input -->
-      <div class="relative hidden md:block">
-        <i data-lucide="search" class="w-3.5 h-3.5 text-white/70 absolute left-2.5 top-2"></i>
-        <input id="search-input" type="text" oninput="renderCurrentView()" placeholder="ค้นหาการ์ด / ชื่อน้อง..."
-          class="bg-white/15 hover:bg-white/20 focus:bg-white focus:text-slate-900 placeholder-white/70 focus:placeholder-slate-400 text-xs rounded-md pl-8 pr-3 py-1.5 w-44 focus:w-56 transition focus:outline-none border border-white/20" />
-      </div>
+        <!-- PIN Input Box (Appears when selected user has a PIN) -->
+        <div id="login-pin-box" class="hidden pt-2 border-t border-zinc-100 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-zinc-600">รหัสเข้าใช้งานของ <b id="login-selected-name" class="text-zinc-900"></b></span>
+            <span id="login-pin-hint" class="font-mono text-[11px] text-zinc-400"></span>
+          </div>
+          <div class="flex gap-2">
+            <input id="login-pin-input" type="password" inputmode="numeric" maxlength="12" placeholder="กรอกรหัส PIN (ค่าเริ่มต้น 1234)..."
+              onkeydown="if(event.key==='Enter'){event.preventDefault();confirmMemberLogin();}"
+              class="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400" />
+            <button type="button" onclick="confirmMemberLogin()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-2 rounded-lg transition shadow-sm">
+              เข้าสู่ระบบ →
+            </button>
+          </div>
+          <p id="login-error-msg" class="hidden text-[11px] text-rose-600 font-medium"></p>
+        </div>
 
-      <!-- Platform Filter -->
-      <select id="filter-platform" onchange="renderCurrentView()" class="bg-white/15 hover:bg-white/25 text-white text-xs rounded-md px-2.5 py-1.5 border border-white/20 focus:outline-none focus:bg-white focus:text-slate-900 cursor-pointer">
-        <option value="ALL" class="text-slate-900">🏷️ ทุกป้ายกำกับ (All Labels)</option>
-        <option value="Facebook" class="text-slate-900">🟦 Facebook</option>
-        <option value="TikTok" class="text-slate-900">⬛ TikTok</option>
-        <option value="IG / Reels" class="text-slate-900">🟪 IG / Reels</option>
-        <option value="YouTube / Shorts" class="text-slate-900">🟥 YouTube / Shorts</option>
-      </select>
-
-      <!-- Role Toggle (Writer vs Manager) -->
-      <div class="bg-black/30 p-0.5 rounded-md border border-white/15 flex items-center text-xs">
-        <button id="role-writer" onclick="setRole('writer')" class="px-2.5 py-1 rounded font-medium transition flex items-center gap-1 bg-amber-400 text-slate-950 shadow">
-          <i data-lucide="user-pen" class="w-3.5 h-3.5"></i> น้องคนเขียน
-        </button>
-        <button id="role-manager" onclick="setRole('manager')" class="px-2.5 py-1 rounded font-medium transition flex items-center gap-1 text-white/80 hover:text-white">
-          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> หัวหน้าตรวจ
-        </button>
-      </div>
-
-      <!-- Thai Typo Dictionary Power-Up -->
-      <button onclick="openDictModal()" class="bg-white/15 hover:bg-white/25 text-white text-xs px-2.5 py-1.5 rounded-md border border-white/20 flex items-center gap-1.5 transition" title="คลังคำมักเขียนผิด">
-        <i data-lucide="spell-check" class="w-4 h-4 text-amber-300"></i>
-        <span class="hidden sm:inline">คลังคำผิด</span> (<span id="dict-count">0</span>)
-      </button>
-
-      <!-- How to Use QC Board Tutorial Modal Button -->
-      <button onclick="openGuideModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-md shadow flex items-center gap-1 transition" title="คู่มือสอนใช้งาน QC Board ทีละขั้นตอน">
-        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-        <span>สอนใช้ QC Board</span>
-      </button>
-
-      <!-- Board Background Picker -->
-      <div class="flex items-center gap-1 bg-black/25 px-2 py-1 rounded-md border border-white/15" title="เปลี่ยนสีพื้นหลังบอร์ด Trello">
-        <button onclick="setBoardTheme('trello-bg-blue')" class="w-4 h-4 rounded-full bg-[#0079bf] border border-white/60 hover:scale-110 transition"></button>
-        <button onclick="setBoardTheme('trello-bg-sky')" class="w-4 h-4 rounded-full bg-[#00aecc] border border-white/60 hover:scale-110 transition"></button>
-        <button onclick="setBoardTheme('trello-bg-purple')" class="w-4 h-4 rounded-full bg-[#89609e] border border-white/60 hover:scale-110 transition"></button>
-        <button onclick="setBoardTheme('trello-bg-green')" class="w-4 h-4 rounded-full bg-[#519839] border border-white/60 hover:scale-110 transition"></button>
-        <button onclick="setBoardTheme('trello-bg-dark')" class="w-4 h-4 rounded-full bg-[#1d2125] border border-white/60 hover:scale-110 transition"></button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- =====================================================================
-       TRELLO SUB-BAR (Stats + Quick Action Bar)
-  ====================================================================== -->
-  <div class="bg-black/20 px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-white border-b border-white/10 z-20">
-    <div class="flex items-center gap-2 flex-wrap">
-      <!-- Team Avatars -->
-      <div class="flex items-center -space-x-1.5 mr-1">
-        <div class="w-6 h-6 rounded-full bg-pink-500 text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white/40" title="น้องมายด์ (Content Writer)">ม</div>
-        <div class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white/40" title="หัวหน้า (Editor/QC)">หน</div>
+        <!-- Inline Quick Add Member Form inside Login Screen -->
+        <div id="login-add-member-box" class="hidden pt-3 border-t border-zinc-200 bg-zinc-50/70 -mx-6 -mb-6 p-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-zinc-800">เพิ่มรายชื่อคนเขียนบท / ทีมงานใหม่</h3>
+            <button type="button" onclick="toggleLoginAddMemberForm()" class="text-[11px] text-zinc-400 hover:text-zinc-700">ซ่อนฟอร์ม</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input id="login-new-name" type="text" placeholder="ชื่อเรียก (เช่น น้องพลอย)"
+              class="bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
+            <select id="login-new-role" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400">
+              <option value="writer">คนเขียนบท (Writer)</option>
+              <option value="editor">ทีมตัดต่อ (Editor)</option>
+              <option value="poster">แอดมินลงโพสต์ (Admin)</option>
+              <option value="manager">หัวหน้าตรวจงาน (QC / Manager)</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <input id="login-new-pin" type="text" placeholder="ตั้งรหัส PIN (เช่น 1234 หรือเว้นว่างให้กดเข้าได้เลย)"
+              class="flex-1 bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-400" />
+            <button type="button" onclick="addTeamMemberFromLogin()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-3.5 py-1.5 rounded-md shrink-0 transition">
+              + บันทึกรายชื่อ
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Status Counters -->
-      <span class="bg-rose-600/90 text-white px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
-        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> ส่งช้า/เลยกำหนด: <b id="stat-overdue">0</b>
-      </span>
-      <span class="bg-amber-500/90 text-slate-950 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
-        <i data-lucide="eye" class="w-3.5 h-3.5"></i> รอหัวหน้าตรวจ: <b id="stat-review">0</b>
-      </span>
-      <span class="bg-emerald-600/90 text-white px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 shadow-sm">
-        <i data-lucide="clock" class="w-3.5 h-3.5"></i> ตั้งเวลาโพสต์แล้ว: <b id="stat-scheduled">0</b>
-      </span>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <button id="lan-share-btn" onclick="copyLanUrl()" class="hidden bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 px-2.5 py-0.5 rounded font-semibold text-[11px] flex items-center gap-1 transition" title="คลิกเพื่อคัดลอกลิงก์ส่งให้น้องในออฟฟิศเปิดผ่าน Wi-Fi เดียวกัน">
-        🌐 ลิงก์ออฟฟิศ: <span id="lan-url-text" class="underline font-mono"></span> (คลิกคัดลอก)
-      </button>
-      <span id="current-clock" class="font-mono text-white/95 bg-black/30 px-2.5 py-0.5 rounded text-[11px]"></span>
-      <button onclick="resetDemoData()" class="text-white/75 hover:text-white underline text-[11px]">รีเซ็ตข้อมูลตัวอย่าง</button>
     </div>
   </div>
 
   <!-- =====================================================================
-       VIEW 1: TRELLO KANBAN BOARD (Horizontal Lists + Quick Add Card)
+       TOP STUDIO HEADER BAR (Clean Editorial SaaS Style — Linear / Notion)
   ====================================================================== -->
-  <main id="board-view-container" class="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4">
+  <nav class="bg-white/95 backdrop-blur-md border-b border-zinc-200 px-4 py-2 flex items-center justify-between gap-3 text-zinc-800 z-30">
+    <!-- Left: Workspace Identity & View Switcher -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-tight shadow-sm">
+          QC
+        </div>
+        <span class="text-xs font-medium text-zinc-300 hidden sm:inline">/</span>
+        <input id="board-title-input" type="text" value="Health Editorial — ระบบส่งงาน & ตรวจคำผิด"
+          onchange="saveBoardTitle(this.value)"
+          class="bg-transparent hover:bg-zinc-100 focus:bg-white focus:ring-1 focus:ring-zinc-300 font-semibold text-sm text-zinc-900 px-2 py-1 rounded-md focus:outline-none transition w-60 sm:w-72 truncate" />
+      </div>
+
+      <!-- Segmented View Control -->
+      <div class="bg-zinc-100 p-0.5 rounded-lg flex items-center text-xs border border-zinc-200/80">
+        <button id="view-btn-board" onclick="switchView('board')" class="px-2.5 py-1 rounded-md font-medium bg-white text-zinc-900 shadow-sm flex items-center gap-1.5 transition">
+          <i data-lucide="columns-3" class="w-3.5 h-3.5"></i> กระดานงาน
+        </button>
+        <button id="view-btn-calendar" onclick="switchView('calendar')" class="px-2.5 py-1 rounded-md font-medium text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i> ตารางคิวโพสต์
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Search, Filters, Active Member Account, Team Manager, Audit Log, Dictionary, Guide -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Search input -->
+      <div class="relative hidden md:block">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2"></i>
+        <input id="search-input" type="text" oninput="renderCurrentView()" placeholder="ค้นหางาน หรือชื่อคนเขียน..."
+          class="bg-zinc-100/80 hover:bg-zinc-100 focus:bg-white text-zinc-900 placeholder-zinc-400 text-xs rounded-md pl-8 pr-3 py-1.5 w-40 focus:w-52 transition focus:outline-none border border-zinc-200 focus:border-zinc-400" />
+      </div>
+
+      <!-- Channel Filter -->
+      <select id="filter-platform" onchange="renderCurrentView()" class="bg-zinc-100/80 hover:bg-zinc-100 text-zinc-700 text-xs font-medium rounded-md px-2.5 py-1.5 border border-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer">
+        <option value="ALL">ทุกช่องทาง</option>
+        <option value="Facebook">ช่อง 1 · Facebook</option>
+        <option value="TikTok">ช่อง 2 · TikTok</option>
+        <option value="IG / Reels">ช่อง 3 · IG / Reels</option>
+        <option value="YouTube">ช่อง 4 · YouTube</option>
+      </select>
+
+      <div class="h-4 w-px bg-zinc-200 hidden sm:block"></div>
+
+      <!-- Logged-in Account Pill + Manage Team / Switch User -->
+      <div id="tour-step-user" class="flex items-center bg-zinc-100/90 rounded-md border border-zinc-200 p-0.5 text-xs">
+        <button type="button" onclick="openTeamModal()" class="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white transition" title="คลิกเพื่อจัดการรายชื่อทีมงาน (เพิ่ม/ลบคนเขียนบท)">
+          <span id="nav-user-avatar" class="w-4 h-4 rounded-full bg-zinc-900 text-white text-[10px] font-semibold flex items-center justify-center">ม</span>
+          <span id="nav-user-name" class="font-semibold text-zinc-900 max-w-[130px] truncate">น้องมายด์</span>
+          <span id="nav-user-role-badge" class="text-[10px] px-1.5 py-0.2 rounded bg-zinc-200/80 text-zinc-600 font-medium">คนเขียนบท</span>
+        </button>
+        <button type="button" onclick="openTeamModal()" class="px-1.5 py-1 text-zinc-500 hover:text-zinc-900 border-l border-zinc-200/80 transition" title="เพิ่ม/ลบรายชื่อคนเขียนบท">
+          <i data-lucide="users" class="w-3.5 h-3.5"></i>
+        </button>
+        <button type="button" onclick="openLoginScreen()" class="px-2 py-1 text-[11px] font-medium text-zinc-500 hover:text-rose-600 border-l border-zinc-200/80 transition" title="สลับบัญชีผู้ใช้งาน / ล็อกอินใหม่">
+          สลับบัญชี
+        </button>
+      </div>
+
+      <!-- Hidden select kept for compatibility -->
+      <select id="active-user-select" onchange="handleUserSwitch(this.value)" class="hidden"></select>
+
+      <!-- Board-Wide Audit Log Button -->
+      <button onclick="openAuditLogModal()" id="tour-step-audit" class="bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium px-2.5 py-1.5 rounded-md border border-zinc-200 flex items-center gap-1.5 transition shadow-[0_1px_2px_rgba(0,0,0,0.03)]" title="ดูประวัติการแก้ไขทั้งหมดในระบบ">
+        <i data-lucide="history" class="w-3.5 h-3.5 text-zinc-500"></i>
+        <span>ประวัติแก้ไข</span>
+        <span id="audit-count-badge" class="bg-zinc-100 text-zinc-700 border border-zinc-200 font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded">0</span>
+      </button>
+
+      <!-- Thai Proofreading Dictionary -->
+      <button onclick="openDictModal()" id="tour-step-dict" class="bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium px-2.5 py-1.5 rounded-md border border-zinc-200 flex items-center gap-1.5 transition shadow-[0_1px_2px_rgba(0,0,0,0.03)]" title="คลังคำสะกดผิดและคำเฉพาะของเพจ">
+        <i data-lucide="book-check" class="w-3.5 h-3.5 text-zinc-500"></i>
+        <span class="hidden sm:inline">คลังคำผิด</span>
+        <span id="dict-count" class="font-mono text-[10px] text-zinc-400">0</span>
+      </button>
+
+      <!-- Interactive Step-by-Step Guide Tour -->
+      <button onclick="startInteractiveTour()" class="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs px-3 py-1.5 rounded-md shadow-sm flex items-center gap-1.5 transition">
+        <i data-lucide="compass" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span>ไกด์สอนใช้งาน</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- =====================================================================
+       SUB-HEADER STATUS BAR (Minimalist Status Dots & Environment Info)
+  ====================================================================== -->
+  <div class="bg-zinc-50/90 backdrop-blur border-b border-zinc-200/80 px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-600 z-20">
+    <div class="flex items-center gap-4 flex-wrap">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span class="text-zinc-600">เกินกำหนดส่ง:</span>
+        <b id="stat-overdue" class="font-mono text-zinc-900">0</b>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        <span class="text-zinc-600">รอตรวจทาน:</span>
+        <b id="stat-review" class="font-mono text-zinc-900">0</b>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="text-zinc-600">ตั้งเวลา/ลงโพสต์แล้ว:</span>
+        <b id="stat-scheduled" class="font-mono text-zinc-900">0</b>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-400">
+        <span>พื้นหลัง:</span>
+        <button onclick="setBoardTheme('trello-bg-blue')" class="w-3.5 h-3.5 rounded-full bg-[#e4e4e7] border border-zinc-400 hover:scale-110 transition" title="Studio Stone"></button>
+        <button onclick="setBoardTheme('trello-bg-sky')" class="w-3.5 h-3.5 rounded-full bg-[#cbd5e1] border border-zinc-400 hover:scale-110 transition" title="Cool Slate"></button>
+        <button onclick="setBoardTheme('trello-bg-purple')" class="w-3.5 h-3.5 rounded-full bg-[#e7e5e4] border border-zinc-400 hover:scale-110 transition" title="Warm Sand"></button>
+        <button onclick="setBoardTheme('trello-bg-dark')" class="w-3.5 h-3.5 rounded-full bg-[#18181b] border border-zinc-500 hover:scale-110 transition" title="Obsidian Dark"></button>
+      </div>
+
+      <button id="lan-share-btn" onclick="copyLanUrl()" class="hidden bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 px-2 py-0.5 rounded font-medium text-[11px] flex items-center gap-1 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]" title="คลิกเพื่อคัดลอกลิงก์ใช้งานในวงแลนเดียวกัน">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span>LAN:</span>
+        <span id="lan-url-text" class="font-mono text-zinc-900"></span>
+      </button>
+      <span id="current-clock" class="font-mono text-zinc-500 text-[11px]"></span>
+      <button onclick="resetDemoData()" class="text-zinc-400 hover:text-zinc-700 text-[11px] transition">รีเซ็ตข้อมูลตัวอย่าง</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       VIEW 1: KANBAN PIPELINE BOARD
+  ====================================================================== -->
+  <main id="board-view-container" class="flex-1 overflow-x-auto overflow-y-hidden p-4">
     <div id="kanban-board" class="flex gap-3.5 h-full items-start">
-      <!-- Trello Lists injected by app.js -->
+      <!-- Columns injected by app.js -->
     </div>
   </main>
 
   <!-- =====================================================================
-       VIEW 2: TRELLO CALENDAR POWER-UP VIEW (Draft vs Publish Schedule)
+       VIEW 2: SCHEDULE / CALENDAR LIST VIEW
   ====================================================================== -->
-  <section id="calendar-view-container" class="hidden flex-1 overflow-y-auto p-4">
-    <div class="max-w-6xl mx-auto bg-white/95 backdrop-blur rounded-xl shadow-2xl border border-white/40 overflow-hidden text-slate-800">
-      <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+  <section id="calendar-view-container" class="hidden flex-1 overflow-y-auto p-4 sm:p-6">
+    <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden text-zinc-800">
+      <div class="px-6 py-4 bg-zinc-50/70 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="calendar-clock" class="w-5 h-5 text-sky-600"></i>
-            ตารางคิวส่งดราฟต์ & คิวลงโพสต์จริง (เรียงตามเวลา)
+          <h2 class="text-sm font-semibold text-zinc-900 flex items-center gap-2">
+            <i data-lucide="calendar-clock" class="w-4 h-4 text-zinc-500"></i>
+            ตารางกำหนดส่งดราฟต์ & เวลาขึ้นโพสต์จริง
           </h2>
-          <p class="text-xs text-slate-500">ช่วยให้ทั้งน้องและหัวหน้าเห็นภาพรวมว่าวันไหนต้องส่งบท วันไหนโพสต์จริง และงานไหนยังไม่ได้ตั้งเวลาโพสต์</p>
+          <p class="text-xs text-zinc-500 mt-0.5">เรียงตามลำดับเวลาโพสต์ เพื่อตรวจสอบคิวงานที่ต้องส่งตรวจล่วงหน้าและสถานะแต่ละช่องทาง</p>
         </div>
-        <button onclick="openCreateModal('idea')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-semibold px-3.5 py-2 rounded-md flex items-center gap-1.5 shadow transition">
-          <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มคิวงานใหม่
+        <button onclick="openCreateModal('idea_review')" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> สร้างการ์ดงานใหม่
         </button>
       </div>
-      <div id="calendar-agenda-list" class="divide-y divide-slate-200 p-4 space-y-3">
+      <div id="calendar-agenda-list" class="divide-y divide-zinc-100 p-4 space-y-2">
         <!-- Populated by renderCalendarView() -->
       </div>
     </div>
   </section>
 
   <!-- =====================================================================
-       TRELLO CARD BACK MODAL (Full Trello-Style Window)
+       CARD WORKSPACE MODAL (Editorial 2-Pane Layout — Notion / Linear Style)
   ====================================================================== -->
-  <div id="card-modal" onclick="handleModalBackdropClick(event)" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 hidden items-start justify-center p-2 sm:p-6 overflow-y-auto">
-    <div class="bg-[#f1f2f4] text-slate-800 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden my-4 border border-slate-300">
+  <div id="card-modal" onclick="handleModalBackdropClick(event)" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-40 hidden items-start justify-center p-2 sm:p-6 overflow-y-auto">
+    <div class="bg-white text-zinc-900 rounded-xl w-full max-w-5xl shadow-2xl overflow-hidden my-3 border border-zinc-200">
 
-      <!-- Card Cover Color Strip (Trello Card Cover) -->
-      <div id="modal-cover-strip" class="h-9 bg-gradient-to-r from-[#0079bf] to-[#00aecc] px-4 flex items-center justify-between text-white text-xs">
+      <!-- Top Modal Bar (Breadcrumb + Status + Close) -->
+      <div id="modal-cover-strip" class="px-6 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-zinc-400 font-medium">ขั้นตอนปัจจุบัน</span>
+          <span class="text-zinc-300">/</span>
+          <span id="modal-status-badge" class="font-semibold text-zinc-800 bg-white border border-zinc-200 px-2.5 py-0.5 rounded-md shadow-[0_1px_2px_rgba(0,0,0,0.03)]"></span>
+          <span id="modal-deadline-badge" class="font-mono text-[11px] text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded"></span>
+        </div>
         <div class="flex items-center gap-2">
-          <span id="modal-status-badge" class="font-semibold bg-black/25 px-2.5 py-0.5 rounded"></span>
-          <span id="modal-deadline-badge" class="font-medium bg-black/25 px-2.5 py-0.5 rounded"></span>
-        </div>
-        <button onclick="closeCardModal()" class="w-7 h-7 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <!-- Card Header (Title + "in list ...") -->
-      <div class="px-6 pt-4 pb-2 flex items-start gap-3">
-        <i data-lucide="credit-card" class="w-5 h-5 text-slate-600 mt-1.5 shrink-0"></i>
-        <div class="flex-1">
-          <input id="modal-title" type="text" placeholder="ชื่อการ์ด / หัวข้อคอนเทนต์..."
-            class="w-full bg-transparent focus:bg-white text-lg sm:text-xl font-bold text-slate-900 rounded px-2 py-1 -ml-2 focus:outline-none focus:ring-2 focus:ring-[#0079bf]" />
-          <p class="text-xs text-slate-500 mt-0.5">
-            อยู่ในลิสต์ <span id="modal-list-name-inline" class="underline font-semibold text-slate-700"></span>
-          </p>
+          <span class="text-[11px] text-zinc-400 hidden sm:inline">กำลังแก้ไขในชื่อ: <b id="modal-active-actor-label" class="text-zinc-800"></b></span>
+          <button onclick="closeCardModal()" class="w-7 h-7 rounded-md hover:bg-zinc-200/70 flex items-center justify-center text-zinc-500 hover:text-zinc-900 transition" title="ปิดหน้าต่าง (บันทึกอัตโนมัติ)">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
         </div>
       </div>
 
-      <!-- Trello 2-Column Card Body (Main Left + Actions Sidebar Right) -->
-      <div class="p-6 pt-3 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- 2-Pane Split Layout: Main Editor (Left 8 cols) + Inspector Sidebar (Right 4 cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12">
 
-        <!-- LEFT MAIN AREA (8 cols) -->
-        <div class="lg:col-span-8 space-y-5">
+        <!-- LEFT PANE: EDITORIAL WORKSPACE (8 cols) -->
+        <div class="lg:col-span-8 p-6 space-y-6 bg-white">
 
-          <!-- NEW: News Reference Link & Auto Thumbnail Fetcher -->
-          <div class="bg-white p-4 rounded-lg shadow-sm border border-sky-200 space-y-3">
+          <!-- Card Title -->
+          <div>
+            <input id="modal-title" type="text" placeholder="ตั้งชื่อหัวข้อคอนเทนต์..."
+              class="w-full bg-transparent focus:bg-zinc-50 text-lg sm:text-xl font-semibold text-zinc-900 rounded-md px-2 py-1 -ml-2 focus:outline-none focus:ring-1 focus:ring-zinc-300 tracking-tight" />
+            <p class="text-xs text-zinc-400 mt-1">
+              อยู่ในคอลัมน์ <span id="modal-list-name-inline" class="font-medium text-zinc-600"></span>
+            </p>
+          </div>
+
+          <!-- 1. Source News Reference & Thumbnail Extractor -->
+          <div class="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
-              <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i data-lucide="newspaper" class="w-4 h-4 text-[#0079bf]"></i>
-                📰 ลิงก์ข่าว / ต้นทางคอนเทนต์ (วางลิงก์เพื่อโชว์ Thumbnail อัตโนมัติ)
+              <label class="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+                <i data-lucide="link-2" class="w-3.5 h-3.5 text-zinc-500"></i>
+                ลิงก์ข่าว / แหล่งข้อมูลอ้างอิง
               </label>
-              <span id="news-fetch-status" class="text-[11px] text-slate-500">วาง URL ข่าวเพื่อให้ระบบดึงรูปปกข่าว</span>
+              <span id="news-fetch-status" class="text-[11px] text-zinc-400">วางลิงก์เพื่อดึงภาพปกและหัวข้อข่าวอัตโนมัติ</span>
             </div>
 
             <div class="flex gap-2">
               <input id="modal-news-url" type="url"
                 onpaste="setTimeout(() => fetchNewsThumbnailFromInput(), 80)"
                 onchange="fetchNewsThumbnailFromInput()"
-                placeholder="วางลิงก์ข่าวที่นี่ เช่น https://www.thairath.co.th/... หรือ YouTube / Facebook..."
-                class="flex-1 bg-slate-50 focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0079bf] select-text" />
-              <button type="button" onclick="fetchNewsThumbnailFromInput(true)" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0 flex items-center gap-1 shadow-sm transition">
-                <i data-lucide="image" class="w-3.5 h-3.5"></i> ดึง Thumbnail
+                placeholder="https://www.thairath.co.th/... หรือลิงก์บทความสุขภาพ / YouTube"
+                class="flex-1 bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 select-text font-mono" />
+              <button type="button" onclick="fetchNewsThumbnailFromInput(true)" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-3 py-1.5 rounded-md shrink-0 flex items-center gap-1.5 transition">
+                <i data-lucide="arrow-down-to-line" class="w-3.5 h-3.5"></i> ดึงข้อมูลข่าว
               </button>
             </div>
 
-            <!-- News Thumbnail Preview Card -->
-            <div id="news-preview-box" class="hidden rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+            <!-- News Preview Card -->
+            <div id="news-preview-box" class="hidden rounded-lg overflow-hidden border border-zinc-200 bg-white">
               <div class="grid grid-cols-1 sm:grid-cols-3">
-                <div class="relative bg-slate-900 h-36 sm:h-auto flex items-center justify-center overflow-hidden">
+                <div class="relative bg-zinc-900 h-32 sm:h-auto flex items-center justify-center overflow-hidden">
                   <img id="news-preview-img" src="" alt="News Thumbnail" class="w-full h-full object-cover" onerror="handleThumbImgError(this)" />
                 </div>
-                <div class="sm:col-span-2 p-3 flex flex-col justify-between gap-2">
+                <div class="sm:col-span-2 p-3.5 flex flex-col justify-between gap-2">
                   <div>
                     <div class="flex items-center justify-between gap-2 mb-1">
-                      <span id="news-preview-domain" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-100 text-sky-800">NEWS</span>
-                      <button type="button" onclick="clearNewsThumbnail()" class="text-[11px] text-rose-600 hover:underline">ลบรูปปก</button>
+                      <span id="news-preview-domain" class="font-mono text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">SOURCE</span>
+                      <button type="button" onclick="clearNewsThumbnail()" class="text-[11px] text-zinc-400 hover:text-rose-600 transition">ลบรูปปก</button>
                     </div>
-                    <h4 id="news-preview-title" class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug"></h4>
+                    <h4 id="news-preview-title" class="text-xs font-semibold text-zinc-900 line-clamp-2 leading-snug"></h4>
                   </div>
-                  <div class="flex items-center gap-2 pt-1 flex-wrap">
-                    <a id="news-preview-open" href="#" target="_blank" rel="noopener" class="text-[11px] font-semibold text-[#0079bf] hover:underline flex items-center gap-1">
-                      🔗 เปิดอ่านข่าวต้นฉบับ
+                  <div class="flex items-center gap-3 pt-1 flex-wrap border-t border-zinc-100">
+                    <a id="news-preview-open" href="#" target="_blank" rel="noopener" class="text-[11px] font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
+                      <i data-lucide="external-link" class="w-3 h-3"></i> เปิดลิงก์ต้นฉบับ
                     </a>
-                    <button type="button" onclick="useNewsTitleAsCardTitle()" class="text-[11px] bg-slate-200 hover:bg-slate-300 text-slate-800 px-2 py-0.5 rounded font-medium transition">
-                      ✨ ใช้ชื่อข่าวเป็นชื่อการ์ด
+                    <button type="button" onclick="useNewsTitleAsCardTitle()" class="text-[11px] text-zinc-600 hover:text-zinc-900 font-medium underline underline-offset-2">
+                      ใช้หัวข้อข่าวเป็นชื่อการ์ด
                     </button>
-                  </div>
-                  <!-- NEW: Health Page Auto-Generate Script from News Link (Style + Health Angle Picker) -->
-                  <div class="pt-2.5 mt-1.5 border-t border-slate-200 space-y-2 bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-200">
-                    <div class="flex items-center justify-between flex-wrap gap-1">
-                      <span class="text-xs font-bold text-emerald-900 flex items-center gap-1">
-                        🩺 สร้างบทจากลิงก์ข่าว + สอดแทรกสาระสุขภาพอัตโนมัติ:
-                      </span>
-                      <select id="health-angle-select" onchange="generateScriptFromNews(currentScriptStyle, true)" class="bg-white border border-emerald-300 rounded px-2 py-1 text-[11px] font-semibold text-emerald-900 focus:outline-none">
-                        <option value="general">🌿 มุมสุขภาพ: การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
-                        <option value="food">🥗 มุมสุขภาพ: โภชนาการ / การเลือกกินอาหาร</option>
-                        <option value="sleep_stress">😴 มุมสุขภาพ: การนอน / ความเครียด / วัยทำงาน</option>
-                        <option value="immunity">🛡️ มุมสุขภาพ: เสริมภูมิคุ้มกัน / ชะลอวัย / ผู้สูงอายุ</option>
-                        <option value="product">💊 มุมสุขภาพ: สอดแทรกตัวช่วย/ผลิตภัณฑ์ของเพจ</option>
-                      </select>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5">
-                      <button type="button" onclick="generateScriptFromNews('health_alert')" class="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                        🚨 1. สไตล์เตือนภัย/อุทาหรณ์สุขภาพ
-                      </button>
-                      <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                        🥗 2. สไตล์เคล็ดลับดูแลตัวเอง (How-to)
-                      </button>
-                      <button type="button" onclick="generateScriptFromNews('myth_fact')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                        🧠 3. สไตล์ไขข้อข้องใจสุขภาพ (รู้หรือไม่)
-                      </button>
-                      <button type="button" onclick="generateScriptFromNews('soft_sell')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition">
-                        💊 4. สไตล์ขยี้ข่าว + โยงเข้าสินค้าสุขภาพ
-                      </button>
-                      <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                        📋 5. แคปชั่นโพสต์สรุปสาระ (แชร์ต่อได้)
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Labels, Members, Content Type Row (Trello Meta Row) -->
-          <div class="flex flex-wrap gap-4 bg-white p-3.5 rounded-lg shadow-sm border border-slate-200">
-            <!-- Labels / Platforms -->
-            <div class="flex-1 min-w-[200px]">
-              <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1.5">📺 ช่องทางที่จะลง & เช็คสถานะลงแล้ว (ช่อง 1, 2, 3...)</label>
-              <div id="modal-platforms" class="flex flex-wrap gap-1.5"></div>
-            </div>
-
-            <!-- Assignee & Format -->
-            <div class="flex gap-2 items-end">
-              <div>
-                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">👤 ผู้รับผิดชอบ</label>
-                <input id="modal-assignee" type="text" placeholder="เช่น น้องมายด์"
-                  class="bg-slate-100 border border-slate-300 rounded px-2.5 py-1 text-xs font-medium text-slate-800 w-28 focus:bg-white focus:outline-none focus:border-[#0079bf]" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">🎬 รูปแบบชิ้นงาน</label>
-                <select id="modal-content-type" class="bg-slate-100 border border-slate-300 rounded px-2 py-1 text-xs font-medium text-slate-800 focus:bg-white focus:outline-none">
-                  <option value="คลิปสั้น (Reels/TikTok)">🎬 คลิปสั้น (Reels/TikTok)</option>
-                  <option value="โพสต์ภาพเดี่ยว/อัลบั้ม">🖼️ โพสต์รูปภาพ/อัลบั้ม</option>
-                  <option value="บทความ/แคปชั่นยาว">📝 บทความ/แคปชั่น</option>
-                  <option value="คลิปยาว YouTube">📺 คลิปยาว YouTube</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Dual Dates Section (Draft Deadline vs Publish Time) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="bg-amber-50 border border-amber-300 rounded-lg p-3 shadow-sm">
-              <label class="block text-xs font-bold text-amber-900 mb-1 flex items-center gap-1.5">
-                <i data-lucide="clock-alert" class="w-4 h-4 text-amber-600"></i>
-                1. กำหนดส่งดราฟต์บท (Draft Due Date)
-              </label>
-              <input id="modal-draft-deadline" type="datetime-local"
-                class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500" />
-              <p class="text-[11px] text-amber-700 mt-1">*ต้องส่งบทให้ตรวจก่อนเวลานี้ (ห้ามดองงานไว้ทำวันโพสต์)</p>
-            </div>
-
-            <div class="bg-sky-50 border border-sky-300 rounded-lg p-3 shadow-sm">
-              <label class="block text-xs font-bold text-sky-900 mb-1 flex items-center gap-1.5">
-                <i data-lucide="calendar-check-2" class="w-4 h-4 text-sky-600"></i>
-                2. เวลาลงโพสต์จริง (Publish Date)
-              </label>
-              <input id="modal-publish-time" type="datetime-local"
-                class="w-full bg-white border border-sky-300 rounded px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-              <p class="text-[11px] text-sky-700 mt-1">*เวลาที่ต้องตั้ง Schedule ล่วงหน้าให้โพสต์ขึ้นอัตโนมัติ</p>
-            </div>
-          </div>
-
-          <!-- Trello Description + Real-Time Thai Typo Scanner -->
-          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
+          <!-- 2. Script Editor + Health Angle Studio Bar + 3-Layer Thai Proofreader -->
+          <div class="space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
-                <i data-lucide="align-left" class="w-4 h-4 text-slate-600"></i>
-                <h3 class="text-sm font-bold text-slate-800">รายละเอียดบท / สคริปต์เพจสุขภาพ (พร้อมระบบตรวจคำผิด 3 ชั้น)</h3>
+                <i data-lucide="file-text" class="w-4 h-4 text-zinc-500"></i>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-600">สคริปต์ / บทคอนเทนต์ & ตรวจคำผิด</h3>
               </div>
               <div class="flex items-center gap-2">
-                <span id="char-counter" class="text-xs text-slate-500">0 ตัวอักษร</span>
-                <button type="button" onclick="autoFixAllTypos()" id="btn-autofix" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2.5 py-1 rounded font-semibold flex items-center gap-1 shadow transition">
-                  <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> แก้คำผิดทั้งหมดอัตโนมัติ
+                <span id="char-counter" class="font-mono text-[11px] text-zinc-400">0 ตัวอักษร</span>
+                <button type="button" onclick="autoFixAllTypos()" id="btn-autofix" class="hidden bg-zinc-900 hover:bg-zinc-800 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5 shadow-sm transition">
+                  <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-400"></i> แก้คำผิดทั้งหมดอัตโนมัติ
                 </button>
               </div>
             </div>
 
-            <!-- Quick Health Script Style Toolbar (Always visible above script textarea) -->
-            <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-2.5 space-y-2">
+            <!-- Unified Editorial Script Generator Bar -->
+            <div class="bg-zinc-50 border border-zinc-200 rounded-lg p-3 space-y-2.5">
               <div class="flex items-center justify-between flex-wrap gap-2">
-                <span class="text-xs font-bold text-emerald-900">🩺 ให้ระบบร่างบทสุขภาพอัตโนมัติ (เลือกมุมสุขภาพ + สไตล์บท):</span>
-                <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-emerald-300 rounded px-2 py-1 text-xs font-semibold text-emerald-900 focus:outline-none">
-                  <option value="general">🌿 มุมสุขภาพ: ดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
-                  <option value="food">🥗 มุมสุขภาพ: โภชนาการ / อาหารการกิน</option>
-                  <option value="sleep_stress">😴 มุมสุขภาพ: การนอน / ความเครียด / วัยทำงาน</option>
-                  <option value="immunity">🛡️ มุมสุขภาพ: ภูมิคุ้มกัน / ชะลอวัย / ผู้สูงอายุ</option>
-                  <option value="product">💊 มุมสุขภาพ: สอดแทรกตัวช่วย/ผลิตภัณฑ์ของเพจ</option>
-                </select>
+                <span class="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
+                  <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-400"></i>
+                  สร้างโครงบทสุขภาพจากข่าว:
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] text-zinc-500">มุมสุขภาพ:</span>
+                  <select id="health-angle-select" onchange="syncHealthAngle(this.value)" class="hidden"></select>
+                  <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-400">
+                    <option value="general">การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
+                    <option value="food">โภชนาการ & การเลือกกินอาหาร</option>
+                    <option value="sleep_stress">การนอนหลับ & ความเครียดวัยทำงาน</option>
+                    <option value="immunity">เสริมภูมิคุ้มกัน & ผู้สูงอายุ</option>
+                    <option value="product">เชื่อมโยงตัวช่วย / ผลิตภัณฑ์ของเพจ</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- 5 Editorial Styles as Clean Tactile Tabs -->
               <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="generateScriptFromNews('health_alert')" class="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                  🚨 1. เตือนภัย/อุทาหรณ์สุขภาพ
+                <button type="button" onclick="generateScriptFromNews('health_alert')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  1. เตือนภัย / อุทาหรณ์สุขภาพ
                 </button>
-                <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                  🥗 2. เคล็ดลับดูแลตัวเอง (How-to)
+                <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  2. เคล็ดลับดูแลตัวเอง (How-to)
                 </button>
-                <button type="button" onclick="generateScriptFromNews('myth_fact')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                  🧠 3. ไขข้อข้องใจ (รู้หรือไม่)
+                <button type="button" onclick="generateScriptFromNews('myth_fact')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  3. ไขข้อข้องใจ (Myth vs Fact)
                 </button>
-                <button type="button" onclick="generateScriptFromNews('soft_sell')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition">
-                  💊 4. ขยี้ข่าว + โยงเข้าสินค้าสุขภาพ
+                <button type="button" onclick="generateScriptFromNews('soft_sell')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  4. ขยี้ข่าว + โยงตัวช่วยสุขภาพ
                 </button>
-                <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-sm transition">
-                  📋 5. แคปชั่นสรุปสาระ (แชร์ต่อได้)
+                <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  5. แคปชั่นสรุปสาระ (โพสต์เพจ)
                 </button>
               </div>
             </div>
 
-            <textarea id="modal-script" rows="6" oninput="runTypoCheck()"
-              placeholder="พิมพ์บทคอนเทนต์ สคริปต์คลิป หรือแคปชั่นที่นี่... ระบบจะเช็คคำผิดให้อัตโนมัติ (เช่น นะค่ะ, สวัสดีคะ, โพส, คอนเท้น, อัพเดท, ลิ้งค์ ฯลฯ)"
-              class="w-full bg-slate-50 focus:bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-800 font-body leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0079bf] select-text"></textarea>
+            <!-- Script Textarea -->
+            <textarea id="modal-script" rows="8" oninput="runTypoCheck()"
+              placeholder="พิมพ์สคริปต์คลิปหรือแคปชั่นที่นี่... ระบบจะตรวจสอบคำสะกดผิด คำซ้ำติดกัน และบริบทประโยคคำถามให้อัตโนมัติ"
+              class="w-full bg-white border border-zinc-200 rounded-lg p-3.5 text-sm text-zinc-800 font-body leading-relaxed focus:outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 select-text"></textarea>
 
-            <!-- Typo Scanner Result Box -->
+            <!-- Proofreader Result Box -->
             <div id="typo-alert-box" class="rounded-lg p-3 border text-xs transition"></div>
           </div>
 
-          <!-- Trello Checklist Section -->
-          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
+          <!-- 3. Quality Checklist Section -->
+          <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <i data-lucide="check-square" class="w-4 h-4 text-slate-600"></i>
-                <h3 class="text-sm font-bold text-slate-800">Checklist ตรวจทานก่อนส่งงาน (บังคับติ๊กครบ)</h3>
+                <i data-lucide="list-checks" class="w-4 h-4 text-zinc-500"></i>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-600">รายการตรวจเช็คคุณภาพก่อนส่ง (QC Checklist)</h3>
               </div>
-              <span id="checklist-progress-text" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">0%</span>
+              <span id="checklist-progress-text" class="font-mono text-xs font-medium px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">0%</span>
             </div>
 
-            <!-- Trello Progress Bar -->
-            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-              <div id="checklist-progress-bar" class="bg-[#0079bf] h-full transition-all duration-300" style="width: 0%"></div>
+            <div class="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+              <div id="checklist-progress-bar" class="bg-zinc-900 h-full transition-all duration-300" style="width: 0%"></div>
             </div>
 
             <div id="modal-checklist" class="space-y-1.5"></div>
 
-            <!-- Add Custom Checklist Item (Like Trello "Add an item") -->
             <div class="flex gap-2 pt-1">
-              <input id="new-checklist-input" type="text" placeholder="เพิ่มรายการตรวจเช็คใหม่ (Add an item)..."
+              <input id="new-checklist-input" type="text" placeholder="เพิ่มรายการตรวจเช็คเพิ่มเติม..."
                 onkeydown="if(event.key==='Enter'){event.preventDefault();addChecklistItem();}"
-                class="flex-1 bg-slate-100 focus:bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-[#0079bf]" />
-              <button type="button" onclick="addChecklistItem()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded transition">
-                + เพิ่มข้อเช็ค
+                class="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
+              <button type="button" onclick="addChecklistItem()" class="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium px-3 py-1.5 rounded-md transition">
+                + เพิ่มรายการ
               </button>
             </div>
           </div>
 
-          <!-- Trello Attachments: Schedule Proof -->
-          <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
+          <!-- 4. Schedule Proof & Attachments -->
+          <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
             <div class="flex items-center gap-2">
-              <i data-lucide="paperclip" class="w-4 h-4 text-slate-600"></i>
-              <h3 class="text-sm font-bold text-slate-800">แนบหลักฐานการตั้งเวลาโพสต์ล่วงหน้า (Attachments / Schedule Proof)</h3>
+              <i data-lucide="paperclip" class="w-4 h-4 text-zinc-500"></i>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-600">หลักฐานการส่งคลิป / ตั้งเวลาโพสต์ล่วงหน้า</h3>
             </div>
-            <p class="text-xs text-slate-500">
-              *บังคับก่อนย้ายไปช่อง <b>"ตั้งเวลาโพสต์แล้ว"</b>: ให้น้องตั้งเวลาโพสต์ใน Meta Business Suite / TikTok Studio แล้ววางลิงก์หรือแนบรูปแคปหน้าจอตรงนี้ (ห้ามรอไปกดโพสต์เองตามเวลาจริง)
-            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">🔗 ลิงก์โพสต์ หรือ หมายเหตุเวลาที่ตั้งไว้</label>
+                <label class="block text-[11px] font-medium text-zinc-500 mb-1">ลิงก์ไฟล์คลิป (Drive) หรือหมายเหตุการตั้งเวลา</label>
                 <input id="modal-schedule-link" type="text" oninput="syncAndRefreshActions()" placeholder="เช่น ตั้งเวลาใน Meta Business Suite แล้ว"
-                  class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#0079bf]" />
+                  class="w-full bg-zinc-50 border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:bg-white focus:outline-none focus:border-zinc-400" />
               </div>
               <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">📸 อัปโหลดรูปแคปจอที่ตั้งเวลาโพสต์แล้ว</label>
+                <label class="block text-[11px] font-medium text-zinc-500 mb-1">แนบรูปแคปหน้าจอตั้งเวลาโพสต์</label>
                 <input id="modal-schedule-image" type="file" accept="image/*" onchange="handleProofImageUpload(event)"
-                  class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#0079bf]/15 file:text-[#0079bf] hover:file:bg-[#0079bf]/25 cursor-pointer" />
+                  class="w-full text-xs text-zinc-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border file:border-zinc-200 file:text-xs file:font-medium file:bg-zinc-50 file:text-zinc-700 hover:file:bg-zinc-100 cursor-pointer" />
               </div>
             </div>
             <div id="proof-image-preview-container" class="hidden pt-2">
-              <div class="relative inline-block bg-slate-100 p-2 rounded-lg border border-slate-300">
-                <img id="proof-image-preview" src="" alt="Schedule Proof" class="max-h-40 rounded" />
-                <button type="button" onclick="removeProofImage()" class="absolute top-3 right-3 bg-rose-600 text-white rounded-full p-1 text-xs shadow hover:bg-rose-500">
+              <div class="relative inline-block bg-zinc-50 p-2 rounded-lg border border-zinc-200">
+                <img id="proof-image-preview" src="" alt="Schedule Proof" class="max-h-36 rounded" />
+                <button type="button" onclick="removeProofImage()" class="absolute top-3 right-3 bg-zinc-900/80 text-white rounded-md p-1 text-xs hover:bg-rose-600 transition">
                   <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
@@ -446,63 +472,111 @@
 
         </div>
 
-        <!-- RIGHT SIDEBAR ACTIONS (4 cols - Trello Card Actions Style) -->
-        <div class="lg:col-span-4 space-y-4">
+        <!-- RIGHT PANE: INSPECTOR SIDEBAR (4 cols — Linear / Notion Property Panel) -->
+        <div class="lg:col-span-4 bg-zinc-50/80 border-t lg:border-t-0 lg:border-l border-zinc-200 p-5 space-y-5">
 
-          <!-- Gatekeeper Action Box -->
-          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
-            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">การส่งงาน (Move Card)</h4>
-
-            <!-- Gatekeeper Lock Alert -->
-            <div id="gatekeeper-warning" class="hidden bg-rose-50 border border-rose-300 text-rose-800 rounded-lg p-2.5 text-xs space-y-1"></div>
-
+          <!-- Primary Workflow Stage Gatekeeper -->
+          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">การส่งงานตามขั้นตอน</h4>
+            <div id="gatekeeper-warning" class="hidden bg-rose-50 border border-rose-200 text-rose-800 rounded-md p-2.5 text-xs space-y-1"></div>
             <div id="workflow-buttons" class="space-y-2"></div>
           </div>
 
-          <!-- Manager Review / Revision Box -->
-          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2.5">
-            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <i data-lucide="message-square-more" class="w-3.5 h-3.5 text-amber-600"></i>
-              ตรวจงาน / คอมเมนต์จากหัวหน้า
-            </h4>
-            <textarea id="modal-feedback" rows="3" placeholder="เขียนคอมเมนต์ให้น้องแก้ไข หรือโน้ตเพิ่มเติม..."
-              class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-amber-500 select-text"></textarea>
+          <!-- Properties Group (Assignee Dropdown from Team Members, Content Type, Dates) -->
+          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">ข้อมูลงาน & กำหนดเวลา</h4>
+              <button type="button" onclick="openTeamModal()" class="text-[11px] text-zinc-500 hover:text-zinc-900 underline">จัดการรายชื่อ</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-medium text-zinc-500 mb-1">ผู้รับผิดชอบ (คนเขียน)</label>
+                <select id="modal-assignee" class="w-full bg-zinc-50 border border-zinc-200 rounded-md px-2 py-1.5 text-xs font-medium text-zinc-800 focus:bg-white focus:outline-none focus:border-zinc-400">
+                  <!-- Populated dynamically from teamMembers -->
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-zinc-500 mb-1">รูปแบบชิ้นงาน</label>
+                <select id="modal-content-type" class="w-full bg-zinc-50 border border-zinc-200 rounded-md px-2 py-1.5 text-xs font-medium text-zinc-800 focus:bg-white focus:outline-none">
+                  <option value="คลิปสั้น (Reels/TikTok)">คลิปสั้น (Reels/TikTok)</option>
+                  <option value="โพสต์ภาพเดี่ยว/อัลบั้ม">โพสต์ภาพ/อัลบั้ม</option>
+                  <option value="บทความ/แคปชั่นยาว">บทความ/แคปชั่น</option>
+                  <option value="คลิปยาว YouTube">คลิปยาว YouTube</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 space-y-2.5">
+              <div>
+                <label class="block text-[11px] font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <span>1. กำหนดส่งดราฟต์บท</span>
+                  <span class="text-[10px] text-amber-600 font-medium">ตรวจก่อนโพสต์</span>
+                </label>
+                <input id="modal-draft-deadline" type="datetime-local"
+                  class="w-full bg-zinc-50 border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs font-mono text-zinc-800 focus:bg-white focus:outline-none focus:border-zinc-400" />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <span>2. เวลาลงโพสต์จริง</span>
+                  <span class="text-[10px] text-sky-600 font-medium">Schedule ล่วงหน้า</span>
+                </label>
+                <input id="modal-publish-time" type="datetime-local"
+                  class="w-full bg-zinc-50 border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs font-mono text-zinc-800 focus:bg-white focus:outline-none focus:border-zinc-400" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Channels Checkboxes (ช่อง 1, 2, 3...) -->
+          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">ช่องทางเผยแพร่ (เช็คช่อง 1, 2, 3...)</h4>
+            <div id="modal-platforms" class="flex flex-col gap-1.5"></div>
+          </div>
+
+          <!-- Manager Review / Revision Note -->
+          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">คอมเมนต์ตรวจงาน / จุดที่ต้องปรับแก้</h4>
+            <textarea id="modal-feedback" rows="2" placeholder="ระบุจุดที่ต้องการให้ปรับแก้ หรือหมายเหตุจากผู้ตรวจ..."
+              class="w-full bg-zinc-50 border border-zinc-200 rounded-md p-2 text-xs text-zinc-800 focus:bg-white focus:outline-none focus:border-zinc-400 select-text"></textarea>
             <div class="flex gap-1.5">
-              <button type="button" onclick="rejectCardWithFeedback()" class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 text-xs py-2 rounded font-semibold flex items-center justify-center gap-1 transition">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> ตีกลับให้แก้
+              <button type="button" onclick="rejectCardWithFeedback()" class="flex-1 bg-white hover:bg-rose-50 text-rose-700 border border-zinc-200 hover:border-rose-200 text-xs py-1.5 rounded-md font-medium flex items-center justify-center gap-1 transition">
+                <i data-lucide="corner-up-left" class="w-3.5 h-3.5"></i> ส่งกลับให้แก้
               </button>
-              <button type="button" onclick="approveCardFromReview()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 rounded font-semibold flex items-center justify-center gap-1 shadow-sm transition">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i> อนุมัติบท
+              <button type="button" onclick="approveCardFromReview()" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white text-xs py-1.5 rounded-md font-medium flex items-center justify-center gap-1 shadow-sm transition">
+                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> อนุมัติผ่าน
               </button>
             </div>
           </div>
 
-          <!-- Share / Export Actions -->
-          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2">
-            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Actions</h4>
-            <button type="button" onclick="copyCardForTrelloOrLine()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
-              <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-600"></i> คัดลอกสรุปส่งเข้า LINE กลุ่ม
-            </button>
-            <button type="button" onclick="duplicateCurrentCard()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
-              <i data-lucide="files" class="w-3.5 h-3.5 text-slate-600"></i> คัดลอกการ์ดใบนี้ (Copy Card)
-            </button>
-            <button type="button" onclick="deleteCurrentCard()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium py-2 px-3 rounded flex items-center gap-2 transition">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบการ์ดนี้ (Delete)
-            </button>
+          <!-- Detailed Revision & Edit History Log (Who edited what & when + Restore) -->
+          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-zinc-400"></i> ประวัติการแก้ไขการ์ดนี้
+              </h4>
+              <span id="modal-history-count" class="font-mono text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">0 รายการ</span>
+            </div>
+            <div id="modal-history" class="space-y-2 max-h-56 overflow-y-auto text-[11px] text-zinc-600 pr-1"></div>
           </div>
 
-          <!-- Activity Log (Trello Activity) -->
-          <div class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 space-y-2">
-            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <i data-lucide="activity" class="w-3.5 h-3.5"></i> ประวัติกิจกรรม (Activity)
-            </h4>
-            <div id="modal-history" class="space-y-1.5 max-h-44 overflow-y-auto text-[11px] text-slate-600"></div>
+          <!-- Utility Actions & Save -->
+          <div class="space-y-2 pt-1">
+            <button type="button" onclick="saveCardModal(true)" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i> บันทึกข้อมูลการ์ด
+            </button>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="copyCardForTrelloOrLine()" class="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-[11px] font-medium py-1.5 px-2 rounded-md flex items-center justify-center gap-1 transition">
+                <i data-lucide="copy" class="w-3 h-3"></i> คัดลอกสรุป
+              </button>
+              <button type="button" onclick="duplicateCurrentCard()" class="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-[11px] font-medium py-1.5 px-2 rounded-md flex items-center justify-center gap-1 transition">
+                <i data-lucide="files" class="w-3 h-3"></i> ทำสำเนา
+              </button>
+              <button type="button" onclick="deleteCurrentCard()" class="bg-white hover:bg-rose-50 border border-zinc-200 hover:border-rose-200 text-rose-600 text-[11px] font-medium py-1.5 px-2 rounded-md flex items-center justify-center gap-1 transition">
+                <i data-lucide="trash-2" class="w-3 h-3"></i> ลบการ์ด
+              </button>
+            </div>
           </div>
-
-          <!-- Save Button -->
-          <button type="button" onclick="saveCardModal(true)" class="w-full bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-bold py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1.5">
-            <i data-lucide="check-circle-2" class="w-4 h-4"></i> บันทึกและปิดหน้าต่าง
-          </button>
 
         </div>
       </div>
@@ -510,27 +584,94 @@
   </div>
 
   <!-- =====================================================================
-       MODAL 2: CUSTOM THAI TYPO DICTIONARY POWER-UP
+       MODAL 2: TEAM MEMBER MANAGEMENT (เพิ่ม / ลบรายชื่อคนเขียนบท & ตั้งรหัสล็อกอิน)
   ====================================================================== -->
-  <div id="dict-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-white text-slate-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-      <div class="px-6 py-4 bg-[#0079bf] text-white flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="spell-check" class="w-5 h-5 text-amber-300"></i>
-          <h2 class="text-base font-bold">QC Board: คลังคำมักเขียนผิด & คำต้องห้ามของออฟฟิศ</h2>
+  <div id="team-modal" onclick="if(event.target.id==='team-modal')closeTeamModal()" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-50 hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[86vh]">
+      <div class="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-zinc-900">จัดการรายชื่อคนเขียนบท & ทีมงาน (เพิ่ม / ลบ / สลับบัญชี)</h2>
+            <p class="text-xs text-zinc-500">รายชื่อที่เพิ่มจะปรากฏในหน้าล็อกอินและช่องเลือกผู้รับผิดชอบงานทันที</p>
+          </div>
         </div>
-        <button onclick="closeDictModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeTeamModal()" class="text-zinc-400 hover:text-zinc-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <!-- Add New Team Member Form -->
+        <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 space-y-3">
+          <h3 class="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-zinc-500"></i>
+            เพิ่มรายชื่อคนเขียนบท / พนักงานใหม่
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input id="team-new-name" type="text" placeholder="ชื่อพนักงาน (เช่น น้องฟ้า)"
+              class="bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
+            <select id="team-new-role" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400">
+              <option value="writer">คนเขียนบท (Writer)</option>
+              <option value="editor">ทีมตัดต่อ (Editor)</option>
+              <option value="poster">แอดมินลงโพสต์ (Admin)</option>
+              <option value="manager">หัวหน้าตรวจงาน (QC / Manager)</option>
+            </select>
+            <input id="team-new-pin" type="text" placeholder="รหัส PIN (เช่น 1234 หรือเว้นว่าง)"
+              class="bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-400" />
+          </div>
+          <div class="flex justify-end">
+            <button type="button" onclick="addTeamMemberFromModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มรายชื่อเข้าทีม
+            </button>
+          </div>
+        </div>
+
+        <!-- Existing Team Members List -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs text-zinc-500">
+            <span class="font-semibold uppercase tracking-wider text-[11px] text-zinc-400">รายชื่อทั้งหมดในระบบ</span>
+            <span id="team-count-label" class="font-mono text-[11px]"></span>
+          </div>
+          <div id="team-member-manage-list" class="divide-y divide-zinc-100 border border-zinc-200 rounded-lg overflow-hidden bg-white">
+            <!-- Populated by renderTeamManageList() -->
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between">
+        <button type="button" onclick="closeTeamModal();openLoginScreen();" class="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1.5">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> ไปหน้าล็อกอิน (สลับผู้ใช้งาน)
+        </button>
+        <button type="button" onclick="closeTeamModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md">
+          เสร็จสิ้น
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 3: THAI TYPO DICTIONARY
+  ====================================================================== -->
+  <div id="dict-modal" onclick="if(event.target.id==='dict-modal')closeDictModal()" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-50 hidden items-center justify-center p-4">
+    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-2xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="book-check" class="w-4 h-4 text-zinc-700"></i>
+          <h2 class="text-sm font-semibold text-zinc-900">คลังคำสะกดผิด & คำเฉพาะของเพจสุขภาพ</h2>
+        </div>
+        <button onclick="closeDictModal()" class="text-zinc-400 hover:text-zinc-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div class="p-6 overflow-y-auto space-y-4 flex-1">
-        <p class="text-xs text-slate-600">
-          เมื่อน้องพิมพ์บทในการ์ด ระบบจะสแกนหาคำผิดจากคลังนี้ทันที หากเจอคำผิด ปุ่มส่งงานให้หัวหน้าจะถูกล็อกอัตโนมัติ คุณสามารถเพิ่มคำที่น้องชอบสะกดผิดบ่อยๆ หรือชื่อสินค้าได้ด้านล่างเลยครับ
+        <p class="text-xs text-zinc-500">
+          ระบบจะตรวจสอบคำในคลังนี้ควบคู่กับการตรวจคำซ้ำและบริบทประโยคคำถามอัตโนมัติ หากพบคำผิดจะไม่สามารถกดส่งบทข้ามขั้นตอนได้
         </p>
 
-        <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input id="new-typo-wrong" type="text" placeholder="คำที่มักพิมพ์ผิด (เช่น นะค่ะ)" class="bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-800" />
-          <input id="new-typo-right" type="text" placeholder="คำที่ถูกต้อง (เช่น นะคะ)" class="bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-800" />
-          <button onclick="addCustomTypoRule()" class="bg-[#0079bf] hover:bg-[#026aa7] text-white font-semibold text-xs rounded px-3 py-2 transition flex items-center justify-center gap-1">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มคำตรวจจับ
+        <div class="bg-zinc-50 p-3 rounded-lg border border-zinc-200 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input id="new-typo-wrong" type="text" placeholder="คำที่มักพิมพ์ผิด (เช่น คลอเรสเตอรอล)" class="bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
+          <input id="new-typo-right" type="text" placeholder="คำที่ถูกต้อง (เช่น คอเลสเตอรอล)" class="bg-white border border-zinc-200 rounded-md px-3 py-1.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400" />
+          <button onclick="addCustomTypoRule()" class="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs rounded-md px-3 py-1.5 transition flex items-center justify-center gap-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มคำตรวจจับ
           </button>
         </div>
 
@@ -540,65 +681,116 @@
   </div>
 
   <!-- =====================================================================
-       MODAL 3: INTERACTIVE TUTORIAL / สอนใช้ QC BOARD
+       MODAL 4: WORKFLOW HANDBOOK MODAL
   ====================================================================== -->
-  <div id="guide-modal" onclick="if(event.target.id==='guide-modal')closeGuideModal()" class="fixed inset-0 bg-black/65 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white text-slate-800 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
-      <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-[#0079bf] text-white flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="graduation-cap" class="w-6 h-6 text-amber-300"></i>
+  <div id="guide-modal" onclick="if(event.target.id==='guide-modal')closeGuideModal()" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-50 hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-2xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[88vh]">
+      <div class="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-zinc-900">คู่มือมาตรฐานการทำงาน QC Board (7 ขั้นตอน)</h2>
+          <p class="text-xs text-zinc-500 mt-0.5">แนวทางปฏิบัติสำหรับทีมเขียนบท ทีมตัดต่อ และผู้ตรวจงาน</p>
+        </div>
+        <button onclick="closeGuideModal()" class="text-zinc-400 hover:text-zinc-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-3 text-xs leading-relaxed">
+        <div class="p-3.5 rounded-lg border border-zinc-200 bg-zinc-50/50 space-y-1">
+          <div class="font-semibold text-zinc-900">1. ล็อกอินด้วยชื่อของตัวเองก่อนเริ่มงาน</div>
+          <p class="text-zinc-600">เลือกชื่อของคุณในหน้าเข้าสู่ระบบ (สามารถเพิ่ม/ลบรายชื่อคนเขียนบทได้ตลอด) เพื่อให้ระบบผูกชื่อผู้รับผิดชอบและบันทึกประวัติการแก้ไขตามชื่อจริง</p>
+        </div>
+        <div class="p-3.5 rounded-lg border border-zinc-200 bg-zinc-50/50 space-y-1">
+          <div class="font-semibold text-zinc-900">2. เสนอไอเดียและวางลิงก์ข่าว (ก่อน 10:30 น.)</div>
+          <p class="text-zinc-600">กดปุ่ม "+ เพิ่มการ์ด" ในคอลัมน์ที่ 1 แล้ววางลิงก์ข่าวอ้างอิง ระบบจะดึงรูปปกข่าวและหัวข้อขึ้นมาอัตโนมัติเพื่อรอเคาะประเด็น</p>
+        </div>
+        <div class="p-3.5 rounded-lg border border-zinc-200 bg-zinc-50/50 space-y-1">
+          <div class="font-semibold text-zinc-900">3. ร่างบทสุขภาพและตรวจคำผิด 3 ชั้น (ก่อน 13:30 น.)</div>
+          <p class="text-zinc-600">เลือกมุมสุขภาพและสไตล์บทเพื่อขึ้นโครงสคริปต์ จากนั้นปรับแต่งเนื้อหาและกดแก้คำผิดให้เรียบร้อยก่อนส่งตรวจในคอลัมน์ที่ 3</p>
+        </div>
+        <div class="p-3.5 rounded-lg border border-zinc-200 bg-zinc-50/50 space-y-1">
+          <div class="font-semibold text-zinc-900">4. ตรวจคลิป ตั้งเวลาโพสต์ และเช็คช่องทาง (ก่อน 17:30 น.)</div>
+          <p class="text-zinc-600">แนบลิงก์คลิปที่ตัดเสร็จในคอลัมน์ที่ 5 เมื่ออนุมัติแล้วให้ตั้งเวลาโพสต์ล่วงหน้าในคอลัมน์ที่ 6 และติ๊กเช็คช่อง 1, 2, 3, 4 เมื่อโพสต์ขึ้นครบ</p>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex justify-between items-center">
+        <button onclick="closeGuideModal();startInteractiveTour();" class="text-xs font-medium text-zinc-600 hover:text-zinc-900 underline underline-offset-2">
+          เริ่มไกด์แนะนำทีละจุดบนหน้าจอ
+        </button>
+        <button onclick="closeGuideModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-1.5 rounded-md">
+          รับทราบ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 5: BOARD-WIDE AUDIT LOG (ประวัติการแก้ไขทั้งบอร์ด + ย้อนคืนเวอร์ชัน)
+  ====================================================================== -->
+  <div id="audit-modal" onclick="if(event.target.id==='audit-modal')closeAuditLogModal()" class="fixed inset-0 bg-zinc-950/45 backdrop-blur-[2px] z-50 hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white text-zinc-800 rounded-xl w-full max-w-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[86vh]">
+      <div class="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
+            <i data-lucide="history" class="w-4 h-4"></i>
+          </div>
           <div>
-            <h2 class="text-base font-bold">🎓 คู่มือสอนใช้งาน QC Board (เพจสุขภาพ) ทีละขั้นตอน</h2>
-            <p class="text-xs text-white/85">สรุปขั้นตอนตั้งแต่หาลิงก์ข่าว ➡️ เขียนบทอัตโนมัติ ➡️ ตรวจคำผิด 3 ชั้น ➡️ เช็คลงช่อง 1, 2, 3</p>
+            <h2 class="text-sm font-semibold text-zinc-900">ประวัติการแก้ไขทั้งหมด (Audit & Revision Log)</h2>
+            <p class="text-xs text-zinc-500">ตรวจสอบว่าใครเข้ามาแก้ไขการ์ดไหน เวลาใด พร้อมดูข้อความก่อนแก้และกู้คืนเวอร์ชันเดิม</p>
           </div>
         </div>
-        <button onclick="closeGuideModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeAuditLogModal()" class="text-zinc-400 hover:text-zinc-800"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-4 text-xs leading-relaxed">
-        <!-- Step 1 -->
-        <div class="bg-sky-50 border border-sky-200 rounded-xl p-4 space-y-1.5">
-          <div class="text-sm font-bold text-sky-900">1️⃣ ขั้นตอนที่ 1: หาข่าว & วางลิงก์ให้โชว์รูปปก (ช่อง "1. ไอเดีย รอตรวจ" — ก่อน 10:30 น.)</div>
-          <p class="text-slate-700">• กดปุ่ม <b>"+ เพิ่มการ์ด / วางลิงก์ข่าว"</b> ท้ายช่องที่ 1 แล้ววางลิงก์ข่าว (เช่น Thairath, Sanook, Hfocus, YouTube) ลงไปได้เลย</p>
-          <p class="text-slate-700">• ระบบจะ <b>ดึงรูปปกข่าว (Thumbnail) และหัวข้อข่าว</b> ขึ้นมาโชว์บนหัวการ์ดให้อัตโนมัติ รอหัวหน้ากดอนุมัติหัวข้อก่อนไปเขียนบท</p>
+      <!-- Filter Bar -->
+      <div class="px-6 py-2.5 bg-white border-b border-zinc-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-zinc-500">กรองตามผู้แก้ไข:</span>
+          <select id="audit-filter-actor" onchange="renderAuditLogList()" class="bg-zinc-50 border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none">
+            <option value="ALL">ทุกคนในทีม</option>
+          </select>
         </div>
-
-        <!-- Step 2 -->
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-1.5">
-          <div class="text-sm font-bold text-emerald-900">2️⃣ ขั้นตอนที่ 2: ให้ระบบร่างบทสุขภาพอัตโนมัติ (ช่อง "2. เขียนบท")</div>
-          <p class="text-slate-700">• คลิกเปิดการ์ดขึ้นมา ➡️ เลือก <b>"🌿 มุมสุขภาพ"</b> (เช่น โภชนาการ, การนอน, ภูมิคุ้มกัน, หรือโยงเข้าสินค้าเพจ)</p>
-          <p class="text-slate-700">• กดปุ่มเลือก <b>"🎬 สไตล์บท 1-5"</b> (เช่น เตือนภัยสุขภาพ, เคล็ดลับดูแลตัวเอง, ไขข้อข้องใจ, ขยี้ข่าวโยงสินค้า, หรือแคปชั่นสรุปสาระ)</p>
-          <p class="text-slate-700">• ระบบจะเขียนโครงบทพร้อมสอดแทรกความรู้สุขภาพให้ทันที แล้วให้น้องปรับแต่งคำพูดเพิ่มเติมตามต้องการ</p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-1.5">
-          <div class="text-sm font-bold text-rose-900">3️⃣ ขั้นตอนที่ 3: ตรวจคำผิด 3 ชั้น & ส่งตรวจบท (ช่อง "3. บทเสร็จ" & "4. บทสมบูรณ์" — ก่อน 13:30 น.)</div>
-          <p class="text-slate-700">• ระบบจะสแกนบทอัตโนมัติ 3 ชั้น: <b>1. คำสะกดผิด/ศัพท์สุขภาพ</b> (เช่น คอเลสเตอรอล, ศีรษะ, นะคะ) <b>2. คำซ้ำติดกัน</b> และ <b>3. คำไม่ถูกบริบทประโยคคำถาม</b></p>
-          <p class="text-slate-700">• หากพบจุดผิด ปุ่มส่งงานจะถูกล็อก 🔒 ให้กดปุ่มสีเขียว <b>"✨ แก้คำผิดทั้งหมดอัตโนมัติ"</b> เมื่อขึ้นสีเขียวไร้คำผิดแล้ว จึงกดส่งเข้าช่องที่ 3 เพื่อให้หัวหน้าตรวจและย้ายเข้า <b>"4. บทสมบูรณ์"</b></p>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1.5">
-          <div class="text-sm font-bold text-amber-900">4️⃣ ขั้นตอนที่ 4: ตัดเสร็จ รอตรวจ ➡️ ตั้งเวลาโพสต์ ➡️ ติ๊กเช็ค ช่อง 1, 2, 3 (ก่อน 17:30 น.)</div>
-          <p class="text-slate-700">• เมื่อตัดคลิปเสร็จ ให้นำลิงก์คลิปมาวางในการ์ดแล้วส่งเข้าช่อง <b>"5. ตัดเสร็จ (รอตรวจ)"</b></p>
-          <p class="text-slate-700">• เมื่อคลิปผ่านแล้ว ให้ไปตั้งเวลาโพสต์ล่วงหน้า (Schedule) ในแพลตฟอร์ม แนบรูปแคปจอที่ตั้งเวลาแล้ว ย้ายไปช่อง <b>"6. รอลง"</b></p>
-          <p class="text-slate-700">• เมื่อโพสต์ขึ้นแต่ละช่องแล้ว ให้คลิกติ๊กปุ่ม <b>"✅ ช่อง 1" "✅ ช่อง 2" "✅ ช่อง 3"</b> บนหน้าการ์ดให้เป็นสีเขียวครบทุกช่อง!</p>
-        </div>
+        <span id="audit-total-label" class="font-mono text-[11px] text-zinc-400"></span>
       </div>
 
-      <div class="px-6 py-3 bg-slate-100 border-t border-slate-200 flex justify-end">
-        <button onclick="closeGuideModal()" class="bg-[#0079bf] hover:bg-[#026aa7] text-white text-xs font-bold px-5 py-2 rounded-lg shadow">
-          เข้าใจแล้ว เริ่มใช้งานเลย!
+      <div id="audit-log-list" class="p-5 overflow-y-auto space-y-2.5 flex-1 bg-zinc-50/50">
+        <!-- Populated by renderAuditLogList() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       INTERACTIVE STEP-BY-STEP GUIDE POPOVER BAR (Clean Studio Onboarding)
+  ====================================================================== -->
+  <div id="tour-banner" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden w-[94%] max-w-xl bg-zinc-900 text-white border border-zinc-700 rounded-xl shadow-2xl p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="space-y-1 flex-1">
+        <div class="flex items-center gap-2">
+          <span id="tour-step-badge" class="font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-medium px-2 py-0.5 rounded">Step 1 / 6</span>
+          <h3 id="tour-step-title" class="text-sm font-semibold text-white"></h3>
+        </div>
+        <p id="tour-step-desc" class="text-xs text-zinc-300 leading-relaxed pt-0.5"></p>
+      </div>
+      <button onclick="stopInteractiveTour()" class="text-zinc-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-zinc-800 transition">ปิด</button>
+    </div>
+    <div class="flex items-center justify-between mt-3.5 pt-2.5 border-t border-zinc-800">
+      <button onclick="openGuideModal();stopInteractiveTour();" class="text-xs text-zinc-400 hover:text-white transition flex items-center gap-1">
+        <i data-lucide="book-open" class="w-3.5 h-3.5"></i> อ่านคู่มือแบบสรุป
+      </button>
+      <div class="flex items-center gap-2">
+        <button id="tour-prev-btn" onclick="prevTourStep()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition">
+          ย้อนกลับ
+        </button>
+        <button id="tour-next-btn" onclick="nextTourStep()" class="bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-semibold px-3.5 py-1.5 rounded-md shadow-sm transition">
+          ถัดไป →
         </button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2.5 text-xs border border-white/15">
-    <i data-lucide="bell" class="w-4 h-4 text-sky-400"></i>
-    <span id="toast-msg">บันทึกสำเร็จ</span>
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-zinc-900 text-white px-3.5 py-2.5 rounded-lg shadow-xl flex items-center gap-2 text-xs border border-zinc-700">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+    <span id="toast-msg">บันทึกข้อมูลเรียบร้อย</span>
   </div>
 
   <script src="app.js"></script>

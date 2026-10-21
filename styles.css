@@ -1,87 +1,124 @@
-/* Trello Authentic Backgrounds & List Styling */
+/* ============================================================================
+   QC BOARD — EDITORIAL STUDIO UI (Linear / Notion / Attio Inspired)
+   Clean neutral surfaces, hairline 1px borders, refined typography, zero AI clutter
+   ============================================================================ */
+
+:root {
+  --bg-canvas: #f4f4f5;
+  --bg-surface: #ffffff;
+  --bg-column: #ebecef;
+  --border-subtle: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+}
+
+/* Studio Canvas Themes */
+.trello-bg-stone,
 .trello-bg-blue {
-  background: linear-gradient(135deg, #0079bf 0%, #005c91 100%);
+  background-color: #f4f4f5;
+  background-image: radial-gradient(#d4d4d8 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
 
 .trello-bg-sky {
-  background: linear-gradient(135deg, #00aecc 0%, #0079bf 100%);
+  background-color: #f1f5f9;
+  background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
 
 .trello-bg-purple {
-  background: linear-gradient(135deg, #89609e 0%, #513b6b 100%);
+  background-color: #f5f3ef;
+  background-image: radial-gradient(#d6d3d1 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
 
 .trello-bg-green {
-  background: linear-gradient(135deg, #519839 0%, #2d621d 100%);
+  background-color: #eff3f0;
+  background-image: radial-gradient(#cbd5ce 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
 
 .trello-bg-dark {
-  background: linear-gradient(135deg, #1d2125 0%, #101214 100%);
+  background-color: #141417;
+  background-image: radial-gradient(#27272a 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
 
-/* Custom Scrollbars (Trello Board Horizontal Scroll) */
+/* Refined Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 10px;
+  width: 6px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.16);
-  border-radius: 8px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 8px;
+  background: rgba(113, 113, 122, 0.28);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(113, 113, 122, 0.48);
 }
 
-/* Inside Trello List Scrollbar */
 .trello-list-cards::-webkit-scrollbar {
-  width: 6px;
-}
-
-.trello-list-cards::-webkit-scrollbar-track {
-  background: rgba(9, 30, 66, 0.06);
+  width: 4px;
 }
 
 .trello-list-cards::-webkit-scrollbar-thumb {
-  background: rgba(9, 30, 66, 0.22);
+  background: rgba(113, 113, 122, 0.22);
+  border-radius: 9999px;
 }
 
-/* Trello List Column (#f1f2f4 authentic Trello list color) */
+/* Kanban Column — Clean Architectural Tray */
 .trello-list {
-  width: 295px;
-  min-width: 295px;
-  max-height: calc(100vh - 118px);
-  background-color: #f1f2f4;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(9, 30, 66, 0.25);
+  width: 288px;
+  min-width: 288px;
+  max-height: calc(100vh - 116px);
+  background-color: rgba(235, 236, 239, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(24, 24, 27, 0.07);
+  border-radius: 10px;
 }
 
-/* Trello White Card */
+/* Kanban Card — Tactile Paper Surface */
 .trello-card {
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  border-radius: 9px;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 1px 2px rgba(24, 24, 27, 0.04);
+  transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.14s ease;
 }
 
 .trello-card:hover {
-  background-color: #f8fafc;
-  box-shadow: 0 4px 8px -2px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+  border-color: #a1a1aa;
+  box-shadow: 0 4px 12px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.05);
+  transform: translateY(-1px);
 }
 
 .trello-card.dragging {
-  opacity: 0.5;
-  transform: rotate(3deg) scale(0.98);
+  opacity: 0.55;
+  transform: rotate(1.5deg) scale(0.98);
+  box-shadow: 0 12px 24px -6px rgba(24, 24, 27, 0.18);
 }
 
 .drop-zone-active {
-  outline: 2px dashed #0079bf;
-  outline-offset: -3px;
-  background-color: #e4f0f6 !important;
+  outline: 1.5px dashed #18181b;
+  outline-offset: -2px;
+  background-color: rgba(24, 24, 27, 0.04) !important;
+}
+
+/* Interactive Guide Tour Spotlight Highlight */
+.tour-highlight-target {
+  position: relative;
+  z-index: 45 !important;
+  box-shadow: 0 0 0 3px #18181b, 0 0 0 7px rgba(16, 185, 129, 0.45), 0 12px 28px rgba(0, 0, 0, 0.18) !important;
+  border-radius: 8px;
+  transition: box-shadow 0.25s ease;
 }
