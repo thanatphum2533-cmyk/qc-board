@@ -315,6 +315,11 @@ function getInitialDemoCards() {
       ],
       scheduleLink: 'Google Drive Draft v2: drive.google.com/clip-05-health',
       scheduleImage: '',
+      videoPath: 'E:\\2026-10-20 หมอชุดฟ้า 7\\ช่อง 1\\นอนเยอะ',
+      videoLink: 'https://drive.google.com/drive/folders/health-expert-05',
+      videoDuration: '01:45 นาที',
+      videoRatio: '9:16',
+      videoNotes: 'ใส่ซับไตเติลตัวหนา ชัดเจน ดนตรีคลอเบาๆ ตัดต่อเสร็จสมบูรณ์',
       feedback: 'ตัดต่อเสร็จแล้ว รอหัวหน้าตรวจเช็คซับไตเติล',
       history: [
         { actor: 'ทีมตัดต่อ (Editor)', time: 'วันนี้ 11:15', text: 'แนบลิงก์ตรวจคลิป ส่งเข้าช่อง "5. ตัดเสร็จ (รอตรวจ)"' }
@@ -1921,12 +1926,25 @@ function createTrelloCardElement(card) {
     typoBadgeHtml = `<span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded">ผ่านตรวจคำผิด</span>`;
   }
 
-  // Word Document Badge
+  // Video Deliverable Badge (For Editor / Poster)
+  let videoBadgeHtml = '';
+  if (card.videoPath) {
+    const parts = card.videoPath.split(/[\\/]/).filter(Boolean);
+    const folderShort = parts.length > 0 ? parts[parts.length - 1] : 'ไฟล์ตัดต่อ';
+    videoBadgeHtml = `<span class="text-[10px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded flex items-center gap-1 truncate max-w-[130px]" title="ที่เก็บไฟล์ตัดต่อ: ${escapeHtml(card.videoPath)}"><i data-lucide="folder" class="w-2.5 h-2.5 text-purple-600 shrink-0"></i> ${escapeHtml(folderShort)}</span>`;
+  } else if (card.videoLink) {
+    videoBadgeHtml = `<span class="text-[10px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="มีลิงก์พรีวิวคลิป"><i data-lucide="video" class="w-2.5 h-2.5 text-purple-600"></i> คลิป</span>`;
+  }
+
+  // Word Document Badge (Only for Writing / Review stages)
   let wordBadgeHtml = '';
-  if (card.wordFile) {
-    wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ไฟล์ Word: ${escapeHtml(card.wordFile.name)}"><i data-lucide="file-text" class="w-2.5 h-2.5 text-blue-600"></i> Word</span>`;
-  } else if (card.wordLink) {
-    wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ลิงก์ Docs: ${escapeHtml(card.wordLink)}"><i data-lucide="link" class="w-2.5 h-2.5 text-blue-600"></i> Docs</span>`;
+  const isScriptStage = card.status === 'writing' || card.status === 'script_review' || card.status === 'script_done';
+  if (isScriptStage) {
+    if (card.wordFile) {
+      wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ไฟล์ Word: ${escapeHtml(card.wordFile.name)}"><i data-lucide="file-text" class="w-2.5 h-2.5 text-blue-600"></i> Word</span>`;
+    } else if (card.wordLink) {
+      wordBadgeHtml = `<span class="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded flex items-center gap-1" title="ลิงก์ Docs: ${escapeHtml(card.wordLink)}"><i data-lucide="link" class="w-2.5 h-2.5 text-blue-600"></i> Docs</span>`;
+    }
   }
 
   const assigneeName = card.assignee || 'ไม่ระบุ';
@@ -1944,6 +1962,7 @@ function createTrelloCardElement(card) {
       </div>
       <div class="pt-2 flex items-center justify-between gap-1 border-t border-zinc-100">
         <div class="flex items-center gap-1.5 flex-wrap">
+          ${videoBadgeHtml}
           ${wordBadgeHtml}
           ${typoBadgeHtml}
           <span class="font-mono text-[10px] px-1 py-0.2 rounded ${doneCheck === totalCheck && totalCheck > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' : 'text-zinc-500'}">
@@ -2010,6 +2029,11 @@ async function submitQuickAddCard(colId) {
     script: '',
     wordFile: null,
     wordLink: '',
+    videoPath: '',
+    videoLink: '',
+    videoDuration: '',
+    videoRatio: '9:16',
+    videoNotes: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2213,6 +2237,11 @@ function openCreateModal(defaultStatus = 'idea_review') {
     script: '',
     wordFile: null,
     wordLink: '',
+    videoPath: '',
+    videoLink: '',
+    videoDuration: '',
+    videoRatio: '9:16',
+    videoNotes: '',
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2262,6 +2291,18 @@ function openCardModal(cardId) {
   document.getElementById('modal-feedback').value = card.feedback || '';
   document.getElementById('modal-news-url').value = card.newsUrl || '';
   document.getElementById('news-fetch-status').textContent = card.newsThumb ? 'แสดง Thumbnail ข่าวอยู่' : 'วางลิงก์เพื่อดึงภาพปกและหัวข้อข่าวอัตโนมัติ';
+
+  // Video Editor Deliverable Fields (Stage 5 onwards)
+  const videoPathEl = document.getElementById('modal-video-path');
+  if (videoPathEl) videoPathEl.value = card.videoPath || '';
+  const videoLinkEl = document.getElementById('modal-video-link');
+  if (videoLinkEl) videoLinkEl.value = card.videoLink || '';
+  const videoDurEl = document.getElementById('modal-video-duration');
+  if (videoDurEl) videoDurEl.value = card.videoDuration || '';
+  const videoRatioEl = document.getElementById('modal-video-ratio');
+  if (videoRatioEl) videoRatioEl.value = card.videoRatio || '9:16';
+  const videoNotesEl = document.getElementById('modal-video-notes');
+  if (videoNotesEl) videoNotesEl.value = card.videoNotes || '';
 
   const ideaNotesEl = document.getElementById('modal-idea-notes');
   if (ideaNotesEl) {
@@ -2633,9 +2674,83 @@ function openWordDocsLink() {
   window.open(validUrl, '_blank', 'noopener,noreferrer');
 }
 
+// ============================================================================
+// VIDEO EDITING DELIVERABLE HELPERS (E:\... Local Path & Cloud Video Preview)
+// ============================================================================
+function copyVideoPathToClipboard() {
+  const pathInput = document.getElementById('modal-video-path');
+  const path = pathInput ? pathInput.value.trim() : '';
+  if (!path) {
+    showToast('⚠️ ยังไม่ได้ระบุที่เก็บไฟล์ในเครื่อง / โฟลเดอร์ไดรฟ์');
+    if (pathInput) pathInput.focus();
+    return;
+  }
+  navigator.clipboard.writeText(path).then(() => {
+    showToast(`📋 คัดลอก Path แล้ว: ${path}`);
+  }).catch(() => {
+    if (pathInput) {
+      pathInput.select();
+      document.execCommand('copy');
+      showToast(`📋 คัดลอก Path แล้ว: ${path}`);
+    }
+  });
+}
+
+function autoSuggestVideoPath() {
+  const pathInput = document.getElementById('modal-video-path');
+  if (!pathInput) return;
+
+  const card = cards.find(c => c.id === activeCardId);
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+
+  // Channel name (e.g. ช่อง 1)
+  const targetCh = card && card.channels ? card.channels.find(ch => ch.target) : null;
+  const channelName = targetCh ? (targetCh.short || targetCh.name) : 'ช่อง 1';
+
+  // Title short name
+  const rawTitle = (card && card.title) ? card.title.trim() : 'นอนเยอะ';
+  const shortTitle = rawTitle.length > 25 ? rawTitle.substring(0, 25).trim() : rawTitle;
+
+  const suggested = `E:\\${dateStr} หมอชุดฟ้า 7\\${channelName}\\${shortTitle}`;
+  pathInput.value = suggested;
+  syncModalFieldsToCardObject();
+  showToast(`📁 แนะนำโครงสร้าง Path: ${suggested}`);
+}
+
+function openVideoPreviewLink() {
+  const link = (document.getElementById('modal-video-link')?.value || '').trim();
+  if (!link) {
+    showToast('กรุณากรอกลิงก์พรีวิวคลิปออนไลน์ (Google Drive / OneDrive) ก่อนกดเปิด');
+    return;
+  }
+  let validUrl = link;
+  if (!/^https?:\/\//i.test(validUrl)) {
+    validUrl = 'https://' + validUrl;
+  }
+  window.open(validUrl, '_blank', 'noopener,noreferrer');
+}
+
+function copyScriptText() {
+  const scriptEl = document.getElementById('modal-script');
+  const text = scriptEl ? scriptEl.value.trim() : '';
+  if (!text) {
+    showToast('⚠️ กล่องบทว่าง ไม่มีข้อความให้คัดลอก');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('📋 คัดลอกบท/แคปชั่นลงคลิปบอร์ดแล้ว');
+  });
+}
+
 function updateCardModalStageVisibility(card) {
   const ideaSec = document.getElementById('modal-idea-section');
+  const writerToolsSec = document.getElementById('modal-writer-tools-section');
   const scriptSec = document.getElementById('modal-script-section');
+  const editorSec = document.getElementById('modal-editor-deliverable-section');
   const checklistSec = document.getElementById('modal-checklist-section');
   const scheduleSec = document.getElementById('modal-schedule-section');
 
@@ -2645,31 +2760,59 @@ function updateCardModalStageVisibility(card) {
   // Only show Idea Concept & News preview. Hide Script Editor, Typo Checker, QC Checklist, and Schedule.
   if (status === 'idea_review') {
     if (ideaSec) ideaSec.classList.remove('hidden');
+    if (writerToolsSec) writerToolsSec.classList.add('hidden');
     if (scriptSec) scriptSec.classList.add('hidden');
+    if (editorSec) editorSec.classList.add('hidden');
     if (checklistSec) checklistSec.classList.add('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
   }
   // 2. Stage 2: "2. เขียนบท" (writing)
-  // Show full Script Generator & Editor. QC Checklist is not needed yet until Stage 3.
+  // Show full Script Generator, Word Attachment & Editor. Hide Video deliverable, QC Checklist, Schedule.
   else if (status === 'writing') {
     if (ideaSec) ideaSec.classList.add('hidden');
+    if (writerToolsSec) writerToolsSec.classList.remove('hidden');
     if (scriptSec) scriptSec.classList.remove('hidden');
+    if (editorSec) editorSec.classList.add('hidden');
     if (checklistSec) checklistSec.classList.add('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
   }
-  // 3. Stage 3, 4, 5: "3. บทเสร็จ (รอตรวจ)", "4. บทสมบูรณ์", "5. ตัดเสร็จ (รอตรวจ)"
-  // Show Script & QC Checklist (as requested: "ต้องเอาไว้ในการ์ด 3")
-  else if (status === 'script_review' || status === 'script_done' || status === 'edit_review') {
+  // 3. Stage 3 & 4: "3. บทเสร็จ (รอตรวจ)", "4. บทสมบูรณ์" (script_review, script_done)
+  // Show Script Generator, Word Attachment, Script Editor, AND QC Checklist. Hide Video Deliverable, Schedule.
+  else if (status === 'script_review' || status === 'script_done') {
     if (ideaSec) ideaSec.classList.add('hidden');
+    if (writerToolsSec) writerToolsSec.classList.remove('hidden');
     if (scriptSec) scriptSec.classList.remove('hidden');
+    if (editorSec) editorSec.classList.add('hidden');
     if (checklistSec) checklistSec.classList.remove('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
   }
-  // 4. Stage 6 & 7: "6. รอลง (ตั้งเวลาโพสต์)" & "7. ลงแล้ว"
-  // Show Script, Checklist, and Schedule Post & Proof
+  // 4. Stage 5: "5. ตัดเสร็จ (รอตรวจ)" (edit_review)
+  // VIDEO EDITING DELIVERABLE STAGE:
+  // - HIDE Writer tools (Gen tabs, Word file attachment) -> No Word attachment in video editing!
+  // - SHOW Script (as reference for checking and subtitles)
+  // - SHOW Video Deliverable (Folder Path E:\2026-10-20 หมอชุดฟ้า 7\ช่อง 1\นอนเยอะ)
+  // - SHOW QC Checklist
+  // - HIDE Schedule
+  else if (status === 'edit_review') {
+    if (ideaSec) ideaSec.classList.add('hidden');
+    if (writerToolsSec) writerToolsSec.classList.add('hidden');
+    if (scriptSec) scriptSec.classList.remove('hidden');
+    if (editorSec) editorSec.classList.remove('hidden');
+    if (checklistSec) checklistSec.classList.remove('hidden');
+    if (scheduleSec) scheduleSec.classList.add('hidden');
+  }
+  // 5. Stage 6 & 7: "6. รอลง (ตั้งเวลาโพสต์)" & "7. ลงแล้ว" (waiting_post, posted)
+  // POSTING STAGE:
+  // - HIDE Writer tools (no Word upload)
+  // - SHOW Script (to copy caption for posting)
+  // - SHOW Video Deliverable (so poster can copy E:\... path to fetch the video file)
+  // - SHOW QC Checklist
+  // - SHOW Schedule Post & Proof
   else if (status === 'waiting_post' || status === 'posted') {
     if (ideaSec) ideaSec.classList.add('hidden');
+    if (writerToolsSec) writerToolsSec.classList.add('hidden');
     if (scriptSec) scriptSec.classList.remove('hidden');
+    if (editorSec) editorSec.classList.remove('hidden');
     if (checklistSec) checklistSec.classList.remove('hidden');
     if (scheduleSec) scheduleSec.classList.remove('hidden');
   }
@@ -2799,6 +2942,11 @@ function syncModalFieldsToCardObject() {
   card.scheduleImage = tempProofImageData;
   card.wordFile = tempWordFileData;
   card.wordLink = document.getElementById('modal-word-link')?.value.trim() || '';
+  card.videoPath = document.getElementById('modal-video-path')?.value.trim() || '';
+  card.videoLink = document.getElementById('modal-video-link')?.value.trim() || '';
+  card.videoDuration = document.getElementById('modal-video-duration')?.value.trim() || '';
+  card.videoRatio = document.getElementById('modal-video-ratio')?.value || '9:16';
+  card.videoNotes = document.getElementById('modal-video-notes')?.value.trim() || '';
 }
 
 function saveCardModal(closeAfter = true) {

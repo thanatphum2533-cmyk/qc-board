@@ -364,9 +364,12 @@
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <i data-lucide="file-text" class="w-4 h-4 text-zinc-500"></i>
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-600">สคริปต์ / บทคอนเทนต์ & ตรวจคำผิด</h3>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-600">สคริปต์ / บทคอนเทนต์ & แคปชั่น</h3>
               </div>
               <div class="flex items-center gap-2">
+                <button type="button" onclick="copyScriptText()" class="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1 transition" title="คัดลอกบท/แคปชั่นทั้งหมด">
+                  <i data-lucide="copy" class="w-3.5 h-3.5 text-zinc-500"></i> คัดลอกบท/แคปชั่น
+                </button>
                 <span id="char-counter" class="font-mono text-[11px] text-zinc-400">0 ตัวอักษร</span>
                 <button type="button" onclick="autoFixAllTypos()" id="btn-autofix" class="hidden bg-zinc-900 hover:bg-zinc-800 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5 shadow-sm transition">
                   <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-400"></i> แก้คำผิดทั้งหมดอัตโนมัติ
@@ -374,116 +377,119 @@
               </div>
             </div>
 
-            <!-- Unified Editorial Script Generator Bar -->
-            <div class="bg-zinc-50 border border-zinc-200 rounded-lg p-3 space-y-2.5">
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <span class="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
-                  <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-400"></i>
-                  สร้างโครงบทสุขภาพจากข่าว:
-                </span>
-                <div class="flex items-center gap-1.5">
-                  <span class="text-[11px] text-zinc-500">มุมสุขภาพ:</span>
-                  <select id="health-angle-select" onchange="syncHealthAngle(this.value)" class="hidden"></select>
-                  <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-400">
-                    <option value="general">การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
-                    <option value="food">โภชนาการ & การเลือกกินอาหาร</option>
-                    <option value="sleep_stress">การนอนหลับ & ความเครียดวัยทำงาน</option>
-                    <option value="immunity">เสริมภูมิคุ้มกัน & ผู้สูงอายุ</option>
-                    <option value="product">เชื่อมโยงตัวช่วย / ผลิตภัณฑ์ของเพจ</option>
-                  </select>
+            <!-- Writer Specific Tools: Health Angle Studio + Word Document Attachment (แสดงเฉพาะขั้นตอนเขียนบทและตรวจบท) -->
+            <div id="modal-writer-tools-section" class="space-y-3">
+              <!-- Unified Editorial Script Generator Bar -->
+              <div class="bg-zinc-50 border border-zinc-200 rounded-lg p-3 space-y-2.5">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <span class="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
+                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-400"></i>
+                    สร้างโครงบทสุขภาพจากข่าว:
+                  </span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] text-zinc-500">มุมสุขภาพ:</span>
+                    <select id="health-angle-select" onchange="syncHealthAngle(this.value)" class="hidden"></select>
+                    <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-400">
+                      <option value="general">การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
+                      <option value="food">โภชนาการ & การเลือกกินอาหาร</option>
+                      <option value="sleep_stress">การนอนหลับ & ความเครียดวัยทำงาน</option>
+                      <option value="immunity">เสริมภูมิคุ้มกัน & ผู้สูงอายุ</option>
+                      <option value="product">เชื่อมโยงตัวช่วย / ผลิตภัณฑ์ของเพจ</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 5 Editorial Styles as Clean Tactile Tabs -->
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="generateScriptFromNews('health_alert')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                    1. เตือนภัย / อุทาหรณ์สุขภาพ
+                  </button>
+                  <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                    2. เคล็ดลับดูแลตัวเอง (How-to)
+                  </button>
+                  <button type="button" onclick="generateScriptFromNews('myth_fact')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                    3. ไขข้อข้องใจ (Myth vs Fact)
+                  </button>
+                  <button type="button" onclick="generateScriptFromNews('soft_sell')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                    4. ขยี้ข่าว + โยงตัวช่วยสุขภาพ
+                  </button>
+                  <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                    5. แคปชั่นสรุปสาระ (โพสต์เพจ)
+                  </button>
                 </div>
               </div>
 
-              <!-- 5 Editorial Styles as Clean Tactile Tabs -->
-              <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="generateScriptFromNews('health_alert')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  1. เตือนภัย / อุทาหรณ์สุขภาพ
-                </button>
-                <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  2. เคล็ดลับดูแลตัวเอง (How-to)
-                </button>
-                <button type="button" onclick="generateScriptFromNews('myth_fact')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  3. ไขข้อข้องใจ (Myth vs Fact)
-                </button>
-                <button type="button" onclick="generateScriptFromNews('soft_sell')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  4. ขยี้ข่าว + โยงตัวช่วยสุขภาพ
-                </button>
-                <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  5. แคปชั่นสรุปสาระ (โพสต์เพจ)
-                </button>
-              </div>
-            </div>
-
-            <!-- Word Document & Document Links Section (แนบไฟล์ Word / ลิงก์ Google Docs) -->
-            <div class="rounded-lg border border-blue-200/80 bg-blue-50/50 p-3 space-y-2.5">
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                    W
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-blue-950">เอกสารบท / ไฟล์ Word (.docx, .doc)</h4>
-                    <p class="text-[11px] text-blue-700/80">แนบไฟล์ Word หรือวางลิงก์ Google Docs / Microsoft 365</p>
-                  </div>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">Docx & Online Docs</span>
-              </div>
-
-              <!-- Word File Uploaded Preview Card -->
-              <div id="word-file-preview-card" class="hidden bg-white border border-blue-200 rounded-lg p-2.5 flex items-center justify-between gap-2 shadow-sm">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                    <i data-lucide="file-text" class="w-4 h-4"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <div id="word-file-name" class="text-xs font-medium text-zinc-900 truncate">บทคอนเทนต์.docx</div>
-                    <div class="flex items-center gap-2 text-[10px] text-zinc-400">
-                      <span id="word-file-size">45.2 KB</span>
-                      <span>•</span>
-                      <span id="word-file-time">แนบเมื่อสักครู่</span>
+              <!-- Word Document & Document Links Section (แนบไฟล์ Word / ลิงก์ Google Docs สำหรับคนเขียนบท) -->
+              <div class="rounded-lg border border-blue-200/80 bg-blue-50/50 p-3 space-y-2.5">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                      W
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-semibold text-blue-950">เอกสารบท / ไฟล์ Word (.docx, .doc)</h4>
+                      <p class="text-[11px] text-blue-700/80">แนบไฟล์ Word หรือวางลิงก์ Google Docs / Microsoft 365 (เฉพาะขั้นตอนเขียนบท)</p>
                     </div>
                   </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">Docx & Online Docs</span>
                 </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <button type="button" id="btn-extract-word-text" onclick="insertExtractedWordText()" class="hidden bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium px-2 py-1 rounded border border-blue-200 transition flex items-center gap-1">
-                    <i data-lucide="file-input" class="w-3.5 h-3.5"></i> ดึงข้อความลงกล่องบท
-                  </button>
-                  <button type="button" onclick="downloadWordFile()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-medium px-2.5 py-1 rounded shadow-sm transition flex items-center gap-1">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i> ดาวน์โหลด
-                  </button>
-                  <button type="button" onclick="removeWordFile()" class="text-zinc-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition" title="ลบไฟล์ Word">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-              </div>
 
-              <!-- Word File Upload Dropzone / Button -->
-              <div id="word-file-upload-zone"
-                   ondragover="event.preventDefault(); this.classList.add('border-blue-500', 'bg-blue-100/50');"
-                   ondragleave="this.classList.remove('border-blue-500', 'bg-blue-100/50');"
-                   ondrop="handleWordFileDrop(event)"
-                   class="border border-dashed border-blue-300 rounded-lg p-2.5 bg-white/80 transition flex flex-col sm:flex-row items-center justify-between gap-2">
-                <input type="file" id="modal-word-file-input" accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" class="hidden" onchange="handleWordFileUpload(event)" />
-                <button type="button" onclick="document.getElementById('modal-word-file-input').click()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-xs font-medium flex items-center justify-center gap-1.5 shadow-sm transition">
-                  <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> แนบไฟล์ Word (.docx, .doc)
-                </button>
-                <span class="text-[11px] text-blue-700/80 text-center sm:text-right">
-                  ลากไฟล์ Word มาวางที่นี่ หรือคลิกแนบไฟล์ (ดึงข้อความลงสคริปต์ให้อัตโนมัติ)
-                </span>
-              </div>
-
-              <!-- Word / Google Docs Online Link Bar -->
-              <div class="pt-1.5 border-t border-blue-100 flex items-center gap-2">
-                <div class="relative flex-1">
-                  <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-blue-400">
-                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                <!-- Word File Uploaded Preview Card -->
+                <div id="word-file-preview-card" class="hidden bg-white border border-blue-200 rounded-lg p-2.5 flex items-center justify-between gap-2 shadow-sm">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <i data-lucide="file-text" class="w-4 h-4"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <div id="word-file-name" class="text-xs font-medium text-zinc-900 truncate">บทคอนเทนต์.docx</div>
+                      <div class="flex items-center gap-2 text-[10px] text-zinc-400">
+                        <span id="word-file-size">45.2 KB</span>
+                        <span>•</span>
+                        <span id="word-file-time">แนบเมื่อสักครู่</span>
+                      </div>
+                    </div>
                   </div>
-                  <input type="url" id="modal-word-link" oninput="syncModalFieldsToCardObject()" placeholder="หรือวางลิงก์ Google Docs / Microsoft 365 Word Online..."
-                    class="w-full bg-white border border-blue-200/90 rounded-md pl-8 pr-2.5 py-1 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-blue-400 select-text" />
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" id="btn-extract-word-text" onclick="insertExtractedWordText()" class="hidden bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium px-2 py-1 rounded border border-blue-200 transition flex items-center gap-1">
+                      <i data-lucide="file-input" class="w-3.5 h-3.5"></i> ดึงข้อความลงกล่องบท
+                    </button>
+                    <button type="button" onclick="downloadWordFile()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-medium px-2.5 py-1 rounded shadow-sm transition flex items-center gap-1">
+                      <i data-lucide="download" class="w-3.5 h-3.5"></i> ดาวน์โหลด
+                    </button>
+                    <button type="button" onclick="removeWordFile()" class="text-zinc-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition" title="ลบไฟล์ Word">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
                 </div>
-                <button type="button" onclick="openWordDocsLink()" class="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-xs font-medium transition flex items-center gap-1 shrink-0">
-                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดลิงก์
-                </button>
+
+                <!-- Word File Upload Dropzone / Button -->
+                <div id="word-file-upload-zone"
+                     ondragover="event.preventDefault(); this.classList.add('border-blue-500', 'bg-blue-100/50');"
+                     ondragleave="this.classList.remove('border-blue-500', 'bg-blue-100/50');"
+                     ondrop="handleWordFileDrop(event)"
+                     class="border border-dashed border-blue-300 rounded-lg p-2.5 bg-white/80 transition flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <input type="file" id="modal-word-file-input" accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" class="hidden" onchange="handleWordFileUpload(event)" />
+                  <button type="button" onclick="document.getElementById('modal-word-file-input').click()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-xs font-medium flex items-center justify-center gap-1.5 shadow-sm transition">
+                    <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> แนบไฟล์ Word (.docx, .doc)
+                  </button>
+                  <span class="text-[11px] text-blue-700/80 text-center sm:text-right">
+                    ลากไฟล์ Word มาวางที่นี่ หรือคลิกแนบไฟล์ (ดึงข้อความลงสคริปต์ให้อัตโนมัติ)
+                  </span>
+                </div>
+
+                <!-- Word / Google Docs Online Link Bar -->
+                <div class="pt-1.5 border-t border-blue-100 flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-blue-400">
+                      <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <input type="url" id="modal-word-link" oninput="syncModalFieldsToCardObject()" placeholder="หรือวางลิงก์ Google Docs / Microsoft 365 Word Online..."
+                      class="w-full bg-white border border-blue-200/90 rounded-md pl-8 pr-2.5 py-1 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-blue-400 select-text" />
+                  </div>
+                  <button type="button" onclick="openWordDocsLink()" class="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-xs font-medium transition flex items-center gap-1 shrink-0">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดลิงก์
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -494,6 +500,104 @@
 
             <!-- Proofreader Result Box -->
             <div id="typo-alert-box" class="rounded-lg p-3 border text-xs transition"></div>
+          </div>
+
+          <!-- 2.5 Video Editor Deliverable Section (สำหรับขั้นตอน 5. ตัดเสร็จ (รอตรวจ) และขั้นตอนโพสต์) -->
+          <div id="modal-editor-deliverable-section" class="hidden rounded-lg border border-purple-200/90 bg-purple-50/40 p-4 space-y-3.5 shadow-sm">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold shadow-sm">
+                  <i data-lucide="video" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="text-xs font-semibold uppercase tracking-wider text-purple-950">ที่เก็บไฟล์ตัดต่อ & คลิปวิดีโอ (Video Deliverable)</h3>
+                  <p class="text-[11px] text-purple-700/80">ระบุ Path โฟลเดอร์งานตัดต่อในไดรฟ์เครื่อง หรือวางลิงก์พรีวิวคลิปออนไลน์</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-medium text-purple-800 bg-purple-100/80 border border-purple-200 px-2 py-0.5 rounded">
+                ขั้นตอน 5. ตัดเสร็จ (รอตรวจ)
+              </span>
+            </div>
+
+            <!-- Local Drive / Server Folder Path Input -->
+            <div class="bg-white border border-purple-200 rounded-lg p-3 space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <label class="block text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+                  <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
+                  ที่เก็บไฟล์ในเครื่อง / โฟลเดอร์ไดรฟ์ (Local Drive / Folder Path):
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="autoSuggestVideoPath()" class="text-[11px] text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded transition flex items-center gap-1" title="สร้างโครงสร้าง Path จากวันที่และหัวข้ออัตโนมัติ">
+                    <i data-lucide="sparkles" class="w-3 h-3 text-purple-500"></i> แนะนำโครงสร้าง Path
+                  </button>
+                  <button type="button" onclick="copyVideoPathToClipboard()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="copy" class="w-3.5 h-3.5 text-purple-300"></i> คัดลอก Path โฟลเดอร์
+                  </button>
+                </div>
+              </div>
+
+              <div class="relative">
+                <input id="modal-video-path" type="text" oninput="syncModalFieldsToCardObject()"
+                  placeholder="เช่น E:\2026-10-20 หมอชุดฟ้า 7\ช่อง 1\นอนเยอะ"
+                  class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-purple-400 font-mono text-xs text-zinc-900 rounded-md p-2.5 leading-relaxed focus:outline-none select-text" />
+              </div>
+              <p class="text-[11px] text-zinc-500 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3 h-3 text-zinc-400 shrink-0"></i>
+                <span>ผู้ตรวจ QC และคนโพสต์สามารถกดปุ่ม <b>"คัดลอก Path"</b> เพื่อนำไปเปิดใน Windows Explorer ดึงไฟล์วิดีโอได้ทันที</span>
+              </p>
+            </div>
+
+            <!-- Cloud Preview Link & Video Specs Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- Cloud Preview Link (Google Drive / OneDrive / Cloud) -->
+              <div class="bg-white border border-purple-200/80 rounded-lg p-2.5 space-y-1.5">
+                <label class="block text-[11px] font-semibold text-zinc-700 flex items-center justify-between">
+                  <span class="flex items-center gap-1">
+                    <i data-lucide="cloud" class="w-3.5 h-3.5 text-blue-500"></i>
+                    ลิงก์พรีวิวคลิปออนไลน์ (Cloud Preview Link):
+                  </span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <input id="modal-video-link" type="url" oninput="syncModalFieldsToCardObject()"
+                    placeholder="https://drive.google.com/..."
+                    class="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-purple-400 rounded-md px-2.5 py-1 text-xs text-zinc-800 focus:outline-none select-text" />
+                  <button type="button" onclick="openVideoPreviewLink()" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-md text-xs font-medium transition flex items-center gap-1 shrink-0">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดคลิป
+                  </button>
+                </div>
+              </div>
+
+              <!-- Video Specs & Ratio -->
+              <div class="bg-white border border-purple-200/80 rounded-lg p-2.5 space-y-1.5">
+                <label class="block text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
+                  <i data-lucide="sliders" class="w-3.5 h-3.5 text-zinc-400"></i>
+                  ความยาวคลิป & สัดส่วน (Duration & Ratio):
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="modal-video-duration" type="text" oninput="syncModalFieldsToCardObject()"
+                    placeholder="เช่น 01:25 นาที"
+                    class="bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-purple-400 rounded-md px-2.5 py-1 text-xs text-zinc-800 focus:outline-none select-text" />
+                  <select id="modal-video-ratio" onchange="syncModalFieldsToCardObject()"
+                    class="bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-purple-400 rounded-md px-2 py-1 text-xs text-zinc-800 focus:outline-none">
+                    <option value="9:16">9:16 (แนวตั้ง Reels/TikTok/Shorts)</option>
+                    <option value="16:9">16:9 (แนวนอน YouTube/FB Feed)</option>
+                    <option value="1:1">1:1 (สี่เหลี่ยมจัตุรัส Feed)</option>
+                    <option value="4:5">4:5 (IG Portrait)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes from Editor to QC -->
+            <div class="bg-white border border-purple-200/80 rounded-lg p-2.5 space-y-1">
+              <label class="block text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
+                <i data-lucide="message-square" class="w-3.5 h-3.5 text-zinc-400"></i>
+                หมายเหตุงานตัดต่อส่งถึงคนตรวจ (Editor Note to QC):
+              </label>
+              <input id="modal-video-notes" type="text" oninput="syncModalFieldsToCardObject()"
+                placeholder="เช่น ใส่ซับตัวหนาแล้ว, ดนตรีคลอเบาๆ, ดึงสีโทนสว่างตามบรีฟ..."
+                class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-purple-400 rounded-md p-2 text-xs text-zinc-800 focus:outline-none select-text" />
+            </div>
           </div>
 
           <!-- 3. Quality Checklist Section (แสดงตั้งแต่ขั้นตอน 3. บทเสร็จ (รอตรวจ) เป็นต้นไป) -->
