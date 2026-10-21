@@ -637,13 +637,54 @@ function submitMasterAdminLogin() {
 }
 
 // Admin Console: Team Member Management & Admin Settings
-function openTeamModal() {
+function switchAdminModalTab(tabKey) {
+  const teamView = document.getElementById('admin-view-team');
+  const secView = document.getElementById('admin-view-security');
+  const teamBtn = document.getElementById('admin-tab-team-btn');
+  const secBtn = document.getElementById('admin-tab-security-btn');
+
+  if (tabKey === 'security') {
+    if (teamView) teamView.classList.add('hidden');
+    if (secView) secView.classList.remove('hidden');
+
+    if (teamBtn) {
+      teamBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70';
+    }
+    if (secBtn) {
+      secBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-zinc-900 text-zinc-900 flex items-center gap-1.5 transition bg-white shadow-sm';
+    }
+  } else {
+    if (secView) secView.classList.add('hidden');
+    if (teamView) teamView.classList.remove('hidden');
+
+    if (teamBtn) {
+      teamBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-zinc-900 text-zinc-900 flex items-center gap-1.5 transition bg-white shadow-sm';
+    }
+    if (secBtn) {
+      secBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70';
+    }
+  }
+  lucide.createIcons();
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const isPwd = el.type === 'password';
+  el.type = isPwd ? 'text' : 'password';
+  if (btn) {
+    btn.innerHTML = `<i data-lucide="${isPwd ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+    lucide.createIcons();
+  }
+}
+
+function openTeamModal(defaultTab = 'team') {
   // If not logged in as Admin, prompt for admin password
   if (!activeMember || !activeMember.isAdmin) {
-    const pwd = prompt('🔐 กรุณากรอกรหัสผ่านของแอดมินหลัก เพื่อเข้าสู่ระบบจัดการรายชื่อคนเขียนบท:');
+    const pwd = prompt('🔐 กรุณากรอกรหัสผ่านของแอดมินหลัก เพื่อเข้าสู่ระบบจัดการรายชื่อคนเขียนบทและความปลอดภัย:');
     if (pwd === null) return;
     if (pwd.trim() !== (adminCredentials.password || '123')) {
-      alert('❌ รหัสผ่านแอดมินไม่ถูกต้อง ไม่สามารถเข้าจัดการรายชื่อพนักงานได้');
+      alert('❌ รหัสผ่านแอดมินไม่ถูกต้อง ไม่สามารถเข้าสู่ระบบแอดมินได้');
       return;
     }
   }
@@ -652,8 +693,18 @@ function openTeamModal() {
 
   const cfgId = document.getElementById('admin-config-id');
   const cfgPwd = document.getElementById('admin-config-pwd');
+  const cfgConfirm = document.getElementById('admin-config-pwd-confirm');
   if (cfgId) cfgId.value = adminCredentials.username || 'admin';
-  if (cfgPwd) cfgPwd.value = adminCredentials.password || '123';
+  if (cfgPwd) {
+    cfgPwd.value = adminCredentials.password || '123';
+    cfgPwd.type = 'password';
+  }
+  if (cfgConfirm) {
+    cfgConfirm.value = adminCredentials.password || '123';
+    cfgConfirm.type = 'password';
+  }
+
+  switchAdminModalTab(defaultTab);
 
   const m = document.getElementById('team-modal');
   m.classList.remove('hidden');
@@ -671,12 +722,19 @@ function closeTeamModal() {
 function saveMasterAdminCredentials() {
   const cfgId = document.getElementById('admin-config-id');
   const cfgPwd = document.getElementById('admin-config-pwd');
+  const cfgConfirm = document.getElementById('admin-config-pwd-confirm');
 
   const newId = (cfgId?.value || '').trim();
   const newPwd = (cfgPwd?.value || '').trim();
+  const confirmPwd = (cfgConfirm?.value || '').trim();
 
   if (!newId || !newPwd) {
     alert('กรุณากรอกทั้ง ID และรหัสผ่านแอดมินให้ครบถ้วน');
+    return;
+  }
+
+  if (confirmPwd && newPwd !== confirmPwd) {
+    alert('❌ รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
     return;
   }
 
@@ -688,7 +746,7 @@ function saveMasterAdminCredentials() {
 
   saveState();
   updateActiveUserBadge();
-  showToast(`💾 บันทึก ID และรหัสผ่านของแอดมินหลักเรียบร้อยแล้ว (ID: ${newId})`);
+  showToast(`🛡️ บันทึกความปลอดภัยและรหัสผ่านแอดมินหลักเรียบร้อย (ID: ${newId})`);
 }
 
 function renderTeamManageList() {
@@ -814,36 +872,60 @@ async function fetchNewsMetadata(rawUrl) {
 
   const domain = extractDomain(url);
   const ytId = extractYouTubeId(url);
+
+  // If YouTube Video or Shorts -> Fetch real video title & author
   if (ytId) {
+    let ytTitle = `วิดีโอคลิป YouTube (${ytId})`;
+    let ytAuthor = 'YouTube Channel';
+    try {
+      const oembedRes = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${ytId}`)}`);
+      if (oembedRes.ok) {
+        const oembedData = await oembedRes.json();
+        if (oembedData && oembedData.title) {
+          ytTitle = oembedData.title;
+          ytAuthor = oembedData.author_name || ytAuthor;
+        }
+      }
+    } catch (e) {}
+
     return {
       url,
       domain: 'youtube.com',
-      title: `คลิปวิดีโออ้างอิง YouTube (${ytId})`,
+      title: ytTitle,
       thumb: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-      description: 'วิดีโออ้างอิงเนื้อหาจาก YouTube'
+      description: `ประเด็นน่าสนใจจากคลิป "${ytTitle}" โดยช่อง ${ytAuthor}`,
+      paragraphs: [
+        `เนื้อหาจากคลิปวิดีโอ: "${ytTitle}" กำลังได้รับความสนใจและมีประเด็นที่คนดูพูดถึงเป็นอย่างมาก`,
+        `ใจความสำคัญที่นำมาต่อยอด: สรุปข้อคิดและสิ่งที่เกิดขึ้นในคลิปเพื่อนำมาวิเคราะห์ต่อในมุมสุขภาพ`,
+        `ข้อคิดเตือนใจสำหรับคนดู: ถอดบทเรียนจากเหตุการณ์ในคลิปนำมาปรับใช้ในการดูแลตนเอง`
+      ]
     };
   }
 
-  // 1. Try Local Python Server /api/extract-news
+  // 1. Try Local Python Server /api/extract-news for full real paragraphs
   try {
     const localRes = await fetch(`/api/extract-news?url=${encodeURIComponent(url)}`);
     if (localRes.ok) {
       const data = await localRes.json();
       if (data && data.status === 'success') {
-        const extraBody = (data.paragraphs || []).slice(0, 2).join(' ');
-        const fullDesc = [data.description, extraBody].filter(Boolean).join(' — ');
+        const paragraphs = data.paragraphs && data.paragraphs.length > 0
+          ? data.paragraphs
+          : [data.description].filter(Boolean);
+        const fullDesc = data.description || (paragraphs[0] || `รายงานข่าวจาก ${domain}`);
+
         return {
           url,
           domain: data.domain || domain,
           title: data.title || `สรุปประเด็นข่าวจาก ${domain}`,
           description: fullDesc,
+          paragraphs: paragraphs,
           thumb: data.image || makeNewsSvgThumb(data.title || domain, domain)
         };
       }
     }
   } catch (e) {}
 
-  // 2. Browser CORS proxy fallback
+  // 2. Browser CORS proxy fallback (extract real title & paragraphs)
   try {
     const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
     if (proxyRes.ok) {
@@ -853,12 +935,20 @@ async function fetchNewsMetadata(rawUrl) {
         const ogTitle = doc.querySelector('meta[property="og:title"], meta[name="twitter:title"]')?.getAttribute('content') || doc.title || '';
         const ogImg = doc.querySelector('meta[property="og:image"], meta[name="twitter:image"]')?.getAttribute('content') || '';
         const ogDesc = doc.querySelector('meta[property="og:description"], meta[name="description"]')?.getAttribute('content') || '';
+
+        // Extract real paragraphs from page body
+        const pTags = Array.from(doc.querySelectorAll('article p, p'))
+          .map(p => p.textContent.trim())
+          .filter(t => t.length >= 35 && !/cookie|copyright|สงวนลิขสิทธิ์/i.test(t))
+          .slice(0, 4);
+
         if (ogTitle || ogImg) {
           return {
             url,
             domain,
             title: ogTitle.trim() || `ข่าวจาก ${domain}`,
-            description: ogDesc.trim(),
+            description: ogDesc.trim() || (pTags[0] || ''),
+            paragraphs: pTags.length > 0 ? pTags : [ogDesc.trim()].filter(Boolean),
             thumb: ogImg || makeNewsSvgThumb(ogTitle || domain, domain)
           };
         }
@@ -870,7 +960,8 @@ async function fetchNewsMetadata(rawUrl) {
     url,
     domain,
     title: `ข่าวอ้างอิงจาก ${domain}`,
-    description: '',
+    description: `เนื้อหาและประเด็นข่าวจาก ${domain}`,
+    paragraphs: [`สรุปประเด็นข่าวที่กำลังได้รับความสนใจจาก ${domain}`],
     thumb: makeNewsSvgThumb(`ข่าวจาก ${domain}`, domain)
   };
 }
@@ -896,7 +987,8 @@ async function fetchNewsThumbnailFromInput(forceToast = false) {
       thumb: meta.thumb,
       title: meta.title,
       domain: meta.domain,
-      description: meta.description || ''
+      description: meta.description || '',
+      paragraphs: meta.paragraphs || []
     };
     renderModalNewsPreview();
 
@@ -915,7 +1007,7 @@ async function fetchNewsThumbnailFromInput(forceToast = false) {
 }
 
 function clearNewsThumbnail() {
-  tempNewsData = { url: '', thumb: '', title: '', domain: '', description: '' };
+  tempNewsData = { url: '', thumb: '', title: '', domain: '', description: '', paragraphs: [] };
   document.getElementById('modal-news-url').value = '';
   document.getElementById('news-fetch-status').textContent = 'วางลิงก์เพื่อดึงภาพปกและหัวข้อข่าวอัตโนมัติ';
   renderModalNewsPreview();
@@ -959,7 +1051,136 @@ function handleThumbImgError(img) {
 
 // ============================================================================
 // HEALTH SCRIPT GENERATOR (5 HEALTH ANGLES × 5 EDITORIAL STYLES)
+// Extracts and synthesizes real facts/paragraphs from news/video links
 // ============================================================================
+function buildHealthScriptContent({ title, domain, description, paragraphs = [], styleKey = 'health_alert', angleKey = 'general' }) {
+  const safeTitle = (title || 'ประเด็นสุขภาพที่น่าสนใจ').trim();
+  const safeDomain = (domain || 'แหล่งข่าวอ้างอิง').trim();
+  const safeDesc = (description || (paragraphs && paragraphs[0]) || '').trim();
+
+  const angleTemplates = {
+    general: {
+      healthFocus: 'การดูแลตนเองเชิงป้องกันและสร้างสมดุลร่างกายในระยะยาว',
+      takeaway: 'เริ่มต้นปรับเปลี่ยนพฤติกรรมง่ายๆ วันละ 1 อย่าง เพื่อสุขภาพที่แข็งแรงอย่างยั่งยืน'
+    },
+    food: {
+      healthFocus: 'โภชนาการที่ถูกต้องและการเลือกรับประทานอาหารที่มีสารอาหารสำคัญครบถ้วน',
+      takeaway: 'เลือกทานอาหารที่มีสารต้านอนุมูลอิสระสูง หลีกเลี่ยงของทอด หวานจัด และเค็มจัด'
+    },
+    sleep_stress: {
+      healthFocus: 'การฟื้นฟูร่างกายผ่านการนอนหลับที่มีคุณภาพและการผ่อนคลายความเครียดสะสม',
+      takeaway: 'จัดตารางนอนให้ตรงเวลา งดจ้องหน้าจอก่อนนอน 30 นาที และฝึกการหายใจลึกเพื่อคลายสมอง'
+    },
+    immunity: {
+      healthFocus: 'การเสริมสร้างภูมิคุ้มกันและชะลอความเสื่อมของเซลล์ในร่างกาย',
+      takeaway: 'เติมสารอาหารที่จำเป็นต่อเม็ดเลือดขาว รับวิตามินจากแดดเช้า และออกกำลังกายสม่ำเสมอ'
+    },
+    product: {
+      healthFocus: 'การเสริมสารอาหารสำคัญควบคู่กับการเลือกใช้ตัวช่วยที่ได้มาตรฐานความปลอดภัย',
+      takeaway: 'หากสนใจแนวทางการฟื้นฟูร่างกายด้วยตัวช่วยที่ปลอดภัย สามารถทักสอบถามทีมผู้เชี่ยวชาญได้เลยนะคะ'
+    }
+  };
+
+  const currentAngleInfo = angleTemplates[angleKey] || angleTemplates.general;
+
+  // Extract substantive paragraphs / facts from news or video
+  let cleanPoints = [];
+  if (Array.isArray(paragraphs) && paragraphs.length > 0) {
+    cleanPoints = paragraphs.map(p => String(p).trim()).filter(p => p.length >= 15);
+  }
+  if (cleanPoints.length === 0 && safeDesc) {
+    cleanPoints = [safeDesc];
+  }
+  if (cleanPoints.length === 0) {
+    cleanPoints = [`ติดตามสาระสำคัญและประเด็นที่น่าจับตามองจาก "${safeTitle}"`];
+  }
+
+  const p1 = cleanPoints[0] || safeTitle;
+  const p2 = cleanPoints[1] || (cleanPoints.length > 1 ? cleanPoints[1] : `ประเด็นนี้สะท้อนให้เห็นถึงความสำคัญของ${currentAngleInfo.healthFocus} ที่ไม่ควรมองข้าม`);
+  const p3 = cleanPoints[2] || `ควรสังเกตอาการผิดปกติและประเมินความเสี่ยงต่อสุขภาพอย่างสม่ำเสมอ`;
+
+  const scriptStyles = {
+    health_alert: `[เตือนภัยสุขภาพ: อุทาหรณ์ที่ทุกคนต้องระวัง]
+📍 ข่าวอ้างอิง: ${safeTitle} (${safeDomain})
+
+🚨 สาระสำคัญจากข่าว / ข้อเท็จจริงที่เกิดขึ้น:
+• ${p1}
+${cleanPoints.length > 1 ? `• ${p2}` : ''}
+
+⚠️ มุมมองสุขภาพและสัญญาณเตือน:
+จากกรณีนี้ พฤติกรรมหรือปัจจัยเสี่ยงดังกล่าวส่งผลโดยตรงต่อ "${currentAngleInfo.healthFocus}" หากปล่อยไว้นานอาจกลายเป็นภัยเงียบสะสมต่อร่างกาย
+
+💡 คำแนะนำสำหรับแฟนเพจ:
+• ${currentAngleInfo.takeaway}
+• หมั่นสังเกตอาการผิดปกติของร่างกายและตรวจเช็คสุขภาพเป็นประจำ
+
+ใครเคยเจอเหตุการณ์แบบนี้ หรือมีอาการใกล้เคียงกันบ้างคะ? คอมเมนต์มาคุยกันได้เลยนะคะ 👇`,
+
+    wellness_tips: `[เคล็ดลับสุขภาพประจำวัน: How-to ดูแลตัวเองง่ายๆ ต่อยอดจากข่าว]
+📍 ต่อยอดจากประเด็น: ${safeTitle} (${safeDomain})
+
+📖 สรุปสาระสำคัญจากเนื้อหา:
+• ${p1}
+${cleanPoints.length > 1 ? `• ${p2}` : ''}
+
+🌿 3 สเต็ปง่ายๆ ดูแลตัวเองเพื่อ ${currentAngleInfo.healthFocus}:
+• สเต็ป 1: ทบทวนพฤติกรรมในชีวิตประจำวัน และหลีกเลี่ยงปัจจัยเสี่ยงตามที่ปรากฏในข่าว
+• สเต็ป 2: ${currentAngleInfo.takeaway}
+• สเต็ป 3: ดื่มน้ำสะอาดให้เพียงพอและพักผ่อนให้มีคุณภาพในทุกๆ วัน
+
+เซฟโพสต์นี้เก็บไว้ลองทำตามและแชร์ต่อให้คนที่คุณรักกันนะคะ 📌`,
+
+    myth_fact: `[ไขข้อข้องใจ: รู้หรือไม่? จริงหรือมั่วเกี่ยวกับสุขภาพ]
+📍 ประเด็นจากข่าว: ${safeTitle}
+
+❌ สิ่งที่หลายคนมักเข้าใจผิด:
+"คิดว่าเป็นเรื่องไกลตัว หรือมองข้ามสัญญาณเตือนเล็กๆ น้อยๆ ในชีวิตประจำวัน"
+
+✅ ข้อเท็จจริงทางการแพทย์ / สาระสำคัญจากเนื้อหา:
+• ${p1}
+${cleanPoints.length > 1 ? `• ${p2}` : ''}
+
+🧠 สรุปแนวทางฟื้นฟูสุขภาพ:
+ในระยะยาว ปัจจัยเหล่านี้จะส่งผลต่อ ${currentAngleInfo.healthFocus} โดยตรง
+${currentAngleInfo.takeaway}
+
+แชร์โพสต์นี้ไปเตือนเพื่อนๆ และคนในครอบครัวกันนะคะ ❤️`,
+
+    soft_sell: `[เจาะลึกสุขภาพ: ดูแลตัวเองอย่างไรให้ตรงจุด]
+📍 อ้างอิงประเด็นข่าว: ${safeTitle} (${safeDomain})
+
+จากประเด็นข่าวที่กำลังได้รับความสนใจ:
+"${p1}"
+${cleanPoints.length > 1 ? `ทำให้เห็นได้ชัดเจนว่า: ${p2}` : ''}
+
+เพราะ "${currentAngleInfo.healthFocus}" คือสิ่งสำคัญที่ควรรีบฟื้นฟูตั้งแต่เนิ่นๆ ก่อนที่จะสายเกินแก้
+
+✨ แนวทางการดูแลตนเองอย่างถูกวิธี:
+${currentAngleInfo.takeaway}
+
+หากใครกำลังมองหาตัวช่วยดูแลสุขภาพที่ปลอดภัย ผ่านการรับรองมาตรฐาน สามารถทักสอบถามทีมงานได้ทางอินบ็อกซ์เลยนะคะ ยินดีให้คำแนะนำค่ะ 💬`,
+
+    fb_infographic: `📌 [สรุปสาระสำคัญสำหรับโพสต์]
+หัวข้อ: ${safeTitle}
+แหล่งที่มา: ${safeDomain}
+
+▪️ ประเด็นสำคัญจากเนื้อหาข่าว / คลิป:
+• ${p1}
+• ${p2}
+${cleanPoints.length > 2 ? `• ${p3}` : ''}
+
+▪️ มุมมองด้านสุขภาพ:
+${currentAngleInfo.healthFocus}
+
+▪️ ข้อควรระวังและแนวทางปฏิบัติ:
+${currentAngleInfo.takeaway}
+
+#สุขภาพดี #ดูแลตัวเอง #สาระสุขภาพ #เตือนภัยสุขภาพ`
+  };
+
+  return scriptStyles[styleKey] || scriptStyles.health_alert;
+}
+
 function syncHealthAngle(val) {
   currentHealthAngle = val;
   const inlineEl = document.getElementById('health-angle-select-inline');
@@ -972,107 +1193,17 @@ function generateScriptFromNews(styleKey, notify = true) {
   const title = tempNewsData.title || document.getElementById('modal-title')?.value || 'ประเด็นสุขภาพที่น่าสนใจ';
   const domain = tempNewsData.domain || 'สำนักข่าว';
   const desc = tempNewsData.description || '';
+  const paragraphs = tempNewsData.paragraphs || [];
 
-  const angleTemplates = {
-    general: {
-      healthFocus: 'การดูแลตนเองเชิงป้องกันและสร้างภูมิคุ้มกันระยะยาว',
-      takeaway: 'เริ่มต้นปรับพฤติกรรมง่ายๆ วันละ 1 อย่าง เพื่อสุขภาพที่แข็งแรงอย่างยั่งยืน'
-    },
-    food: {
-      healthFocus: 'โภชนาการที่ถูกต้องและการเลือกรับประทานอาหารที่มีคุณค่าทางโภชนาการสูง',
-      takeaway: 'เลือกทานอาหารที่มีสารต้านอนุมูลอิสระ หลีกเลี่ยงของทอดและน้ำตาลส่วนเกิน'
-    },
-    sleep_stress: {
-      healthFocus: 'การฟื้นฟูร่างกายผ่านการนอนหลับที่มีคุณภาพและการจัดการความเครียดสะสม',
-      takeaway: 'สร้าง Sleep Hygiene ที่ดี ปิดหน้าจอก่อนนอน 30 นาที และฝึกหายใจคลายเครียด'
-    },
-    immunity: {
-      healthFocus: 'การเสริมเกราะป้องกันร่างกายและการชะลอความเสื่อมของเซลล์ในทุกช่วงวัย',
-      takeaway: 'เสริมสารอาหารที่จำเป็นต่อเม็ดเลือดขาว รับแสงแดดยามเช้า และออกกำลังกายสม่ำเสมอ'
-    },
-    product: {
-      healthFocus: 'การเสริมสารอาหารจำเป็นควบคู่กับการใช้ตัวช่วยที่ปลอดภัยและผ่านการรับรอง',
-      takeaway: 'หากใครมองหาตัวช่วยดูแลสุขภาพ สามารถทักสอบถามทีมผู้เชี่ยวชาญของเพจได้เลยนะคะ'
-    }
-  };
+  const generated = buildHealthScriptContent({
+    title,
+    domain,
+    description: desc,
+    paragraphs,
+    styleKey: currentScriptStyle,
+    angleKey: currentHealthAngle
+  });
 
-  const currentAngleInfo = angleTemplates[currentHealthAngle] || angleTemplates.general;
-
-  const scriptStyles = {
-    health_alert: `[เตือนภัยสุขภาพ: อุทาหรณ์ที่ทุกคนต้องระวัง]
-📍 ข่าวอ้างอิง: ${title} (${domain})
-
-"อย่าคิดว่าร่างกายยังไหว จนกระทั่งสัญญาณเตือนเริ่มปรากฏ..."
-จากประเด็นข่าวที่กำลังได้รับความสนใจ พบว่าพฤติกรรมเสี่ยงใกล้ตัวอาจส่งผลกระทบโดยตรงต่อ ${currentAngleInfo.healthFocus}
-
-🚨 3 ข้อสังเกตที่ต้องเช็คตัวเองด่วน:
-1. รู้สึกอ่อนเพลียผิดปกติ แม้จะนอนครบ 8 ชั่วโมง
-2. สมาธิลดลง ร่างกายฟื้นตัวช้ากว่าปกติ
-3. ภูมิคุ้มกันตก ป่วยง่ายกว่าเดิม
-
-💡 คำแนะนำสำหรับแฟนเพจ:
-${currentAngleInfo.takeaway}
-
-ใครกำลังมีอาการแบบนี้อยู่บ้างคะ? คอมเมนต์มาคุยกันได้เลยนะคะ 👇`,
-
-    wellness_tips: `[เคล็ดลับสุขภาพประจำวัน: How-to ดูแลตัวเองง่ายๆ]
-📍 ต่อยอดจากข่าว: ${title}
-
-รู้หรือไม่คะว่า? แค่ปรับพฤติกรรมเล็กๆ ในชีวิตประจำวัน ก็ช่วยส่งเสริม ${currentAngleInfo.healthFocus} ได้อย่างไม่น่าเชื่อ
-
-🌿 3 สเต็ปง่ายๆ ที่ทำได้ทันทีตั้งแต่วันนี้:
-• สเต็ป 1: ดื่มน้ำสะอาด 1 แก้วทันทีหลังตื่นนอนเพื่อกระตุ้นระบบเผาผลาญ
-• สเต็ป 2: เพิ่มสัดส่วนผักหลากสีในทุกมื้ออาหาร
-• สเต็ป 3: ขยับร่างกายเบาๆ ทุก 1 ชั่วโมงระหว่างทำงาน
-
-${currentAngleInfo.takeaway}
-
-เซฟโพสต์นี้เก็บไว้ลองทำตามดูนะคะ 📌`,
-
-    myth_fact: `[ไขข้อข้องใจ: รู้หรือไม่? จริงหรือมั่วเกี่ยวกับสุขภาพ]
-📍 ประเด็นจากข่าว: ${title}
-
-หลายคนยังเข้าใจผิดเกี่ยวกับเรื่องนี้! วันนี้เรามาสรุปข้อเท็จจริงทางการแพทย์ให้ฟังกันค่ะ
-
-❌ ความเชื่อเดิม: "พฤติกรรมแบบนี้ใครๆ ก็ทำ ไม่เป็นไรหรอก"
-✅ ความจริงทางการแพทย์: ในระยะยาวจะส่งผลต่อ ${currentAngleInfo.healthFocus} โดยตรง
-
-🧠 สรุปสาระสำคัญ:
-${desc ? desc.slice(0, 160) + '...' : 'ควรสังเกตอาการและดูแลสมดุลของร่างกายอย่างสม่ำเสมอ'}
-
-${currentAngleInfo.takeaway}
-
-แชร์โพสต์นี้ไปเตือนคนที่คุณรักกันนะคะ ❤️`,
-
-    soft_sell: `[เจาะลึกสุขภาพ: ดูแลตัวเองอย่างไรให้ตรงจุด]
-📍 อ้างอิงประเด็นข่าว: ${title}
-
-จากข่าวล่าสุด หลายคนเริ่มตระหนักถึงความสำคัญของ ${currentAngleInfo.healthFocus} มากขึ้น
-
-เพราะการดูแลสุขภาพไม่ใช่เรื่องไกลตัว และการได้รับสารอาหารที่ครบถ้วนในแต่ละวันคือพื้นฐานสำคัญที่สุด
-
-✨ ตัวช่วยที่คัดสรรมาเพื่อแฟนเพจ:
-หากชีวิตประจำวันเร่งรีบจนทานอาหารไม่ครบ 5 หมู่ หรือต้องการเสริมการดูแลอย่างตรงจุด ${currentAngleInfo.takeaway}
-
-สอบถามข้อมูลเพิ่มเติมหรือปรึกษาทีมงานได้ทางอินบ็อกซ์เลยนะคะ ยินดีให้คำแนะนำค่ะ 💬`,
-
-    fb_infographic: `📌 [สรุปสาระสำคัญสำหรับโพสต์]
-หัวข้อ: ${title}
-แหล่งที่มา: ${domain}
-
-▪️ สาระสำคัญ:
-${desc ? desc.slice(0, 180) + '...' : 'สรุปแนวทางดูแลตนเองเพื่อสร้างสุขภาพที่ดีในระยะยาว'}
-
-▪️ มุมสุขภาพแนะนำ:
-${currentAngleInfo.healthFocus}
-
-▪️ ข้อควรปฏิบัติ:
-${currentAngleInfo.takeaway}
-
-#สุขภาพดี #ดูแลตัวเอง #สาระสุขภาพ #เพจสุขภาพ`
-  };
-
-  const generated = scriptStyles[styleKey] || scriptStyles.health_alert;
   const scriptEl = document.getElementById('modal-script');
   if (scriptEl) {
     scriptEl.value = generated;
@@ -2010,7 +2141,26 @@ function attemptMoveCard(cardId, targetStatus) {
   const colObj = columns.find(col => col.id === targetStatus);
   const oldCol = columns.find(col => col.id === card.status);
   card.status = targetStatus;
-  recordCardChanges(card, `ย้ายขั้นตอนจาก "${oldCol ? oldCol.title : card.status}" ไปที่ "${colObj ? colObj.title : targetStatus}"`);
+
+  // If card arrives in writing stage, automatically draft health script if card has news info
+  if (targetStatus === 'writing' && (!card.script || card.script.trim().length < 50) && (card.newsUrl || card.newsTitle || (card.newsParagraphs && card.newsParagraphs.length > 0))) {
+    const autoScript = buildHealthScriptContent({
+      title: card.newsTitle || card.title,
+      domain: card.newsDomain || 'ข่าวอ้างอิง',
+      description: card.newsDescription || '',
+      paragraphs: card.newsParagraphs || [],
+      styleKey: currentScriptStyle || 'health_alert',
+      angleKey: currentHealthAngle || 'general'
+    });
+    if (autoScript) {
+      card.script = autoScript;
+      recordCardChanges(card, `ย้ายขั้นตอนจาก "${oldCol ? oldCol.title : card.status}" ไปที่ "${colObj ? colObj.title : targetStatus}" พร้อมระบบดึงเนื้อหาจากลิงก์ข่าว/คลิปร่างบทให้อัตโนมัติ`);
+    } else {
+      recordCardChanges(card, `ย้ายขั้นตอนจาก "${oldCol ? oldCol.title : card.status}" ไปที่ "${colObj ? colObj.title : targetStatus}"`);
+    }
+  } else {
+    recordCardChanges(card, `ย้ายขั้นตอนจาก "${oldCol ? oldCol.title : card.status}" ไปที่ "${colObj ? colObj.title : targetStatus}"`);
+  }
   saveState();
   renderCurrentView();
   showToast(`ย้ายไปที่ "${colObj ? colObj.title : targetStatus}" เรียบร้อยแล้ว`);
@@ -2092,8 +2242,27 @@ function openCardModal(cardId) {
     url: card.newsUrl || '',
     thumb: card.newsThumb || '',
     title: card.newsTitle || '',
-    domain: card.newsDomain || ''
+    domain: card.newsDomain || '',
+    description: card.newsDescription || '',
+    paragraphs: card.newsParagraphs || []
   };
+
+  // If card is in writing stage and has no script (or placeholder script), auto-generate script from attached news/video
+  if (card.status === 'writing' && (!card.script || card.script.trim().length < 50) && (card.newsUrl || card.newsTitle || (card.newsParagraphs && card.newsParagraphs.length > 0))) {
+    const autoScript = buildHealthScriptContent({
+      title: card.newsTitle || card.title,
+      domain: card.newsDomain || 'ข่าวอ้างอิง',
+      description: card.newsDescription || '',
+      paragraphs: card.newsParagraphs || [],
+      styleKey: currentScriptStyle || 'health_alert',
+      angleKey: currentHealthAngle || 'general'
+    });
+    if (autoScript) {
+      card.script = autoScript;
+      document.getElementById('modal-script').value = autoScript;
+      recordCardChanges(card, 'ระบบดึงเนื้อหาจากลิงก์ข่าว/คลิป และร่างบทสุขภาพให้อัตโนมัติในขั้นตอนเขียนบท');
+    }
+  }
 
   if (!card.channels || card.channels.length === 0) {
     card.channels = DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false }));
@@ -2370,6 +2539,8 @@ function syncModalFieldsToCardObject() {
   card.newsThumb = tempNewsData.thumb || '';
   card.newsTitle = tempNewsData.title || '';
   card.newsDomain = tempNewsData.domain || '';
+  card.newsDescription = tempNewsData.description || '';
+  card.newsParagraphs = Array.isArray(tempNewsData.paragraphs) ? [...tempNewsData.paragraphs] : [];
   card.channels = tempChannels.map(ch => ({ ...ch }));
   card.checklist = tempChecklist.map(c => ({ ...c }));
   card.scheduleImage = tempProofImageData;
