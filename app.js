@@ -580,6 +580,11 @@ function submitIdPassLogin() {
     localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
     updateActiveUserBadge();
     closeLoginScreen();
+    renderCurrentView();
+    if (activeCardId) {
+      const curCard = cards.find(c => c.id === activeCardId);
+      if (curCard) renderWorkflowActionButtons(curCard);
+    }
     showToast(`👑 เข้าสู่ระบบสำเร็จในฐานะ "แอดมินหลัก (Master Admin)"`);
     return;
   }
@@ -598,6 +603,11 @@ function submitIdPassLogin() {
     localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
     updateActiveUserBadge();
     closeLoginScreen();
+    renderCurrentView();
+    if (activeCardId) {
+      const curCard = cards.find(c => c.id === activeCardId);
+      if (curCard) renderWorkflowActionButtons(curCard);
+    }
     showToast(`👋 ยินดีต้อนรับคุณ ${matched.name} เข้าสู่ระบบเรียบร้อย`);
     return;
   }
@@ -608,6 +618,14 @@ function submitIdPassLogin() {
     errBox.classList.remove('hidden');
   }
   passInput?.select();
+}
+
+function quickFillLogin(u, p) {
+  const userInput = document.getElementById('login-username-input');
+  const passInput = document.getElementById('login-password-input');
+  if (userInput) userInput.value = u;
+  if (passInput) passInput.value = p;
+  submitIdPassLogin();
 }
 
 // Admin Console: Team Member Management & Admin Settings
@@ -1478,11 +1496,49 @@ function formatThaiDateTime(dateObj) {
   return `${d} ${m} ${hh}:${mm}`;
 }
 
+function isQcManager(member) {
+  const m = member || activeMember;
+  if (!m) return false;
+  return Boolean(m.isAdmin || m.role === 'manager');
+}
+
 function validateMoveCard(card, targetStatus) {
   const typos = scanTextForTypos(card.script || '');
   const totalCheck = (card.checklist || []).length;
   const doneCheck = (card.checklist || []).filter(c => c.done).length;
 
+  const currentStatus = card.status;
+  const isManager = isQcManager(activeMember);
+  const actorName = activeMember ? activeMember.name : 'ทีมงาน';
+
+  // 1. ROLE PERMISSION CHECK: Only QC/Manager can APPROVE cards across review checkpoints
+  if (currentStatus === 'idea_review' && targetStatus === 'writing') {
+    if (!isManager) {
+      return { allowed: false, reason: `เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่สามารถอนุมัติไอเดียได้ (${actorName} ไม่มีสิทธิ์อนุมัติเอง)` };
+    }
+  }
+
+  if (currentStatus === 'script_review' && targetStatus === 'script_done') {
+    if (!isManager) {
+      return { allowed: false, reason: `เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่ตรวจอนุมัติบทได้ (${actorName} ไม่มีสิทธิ์อนุมัติบทตัวเอง)` };
+    }
+  }
+
+  if (currentStatus === 'edit_review' && targetStatus === 'waiting_post') {
+    if (!isManager) {
+      return { allowed: false, reason: `เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่ตรวจอนุมัติคลิปได้ (${actorName} ไม่มีสิทธิ์อนุมัติคลิปเอง)` };
+    }
+  }
+
+  // Only QC/Manager can order revisions (send back to previous stages from review)
+  if ((currentStatus === 'script_review' && targetStatus === 'writing') ||
+      (currentStatus === 'edit_review' && (targetStatus === 'script_done' || targetStatus === 'writing'))) {
+    if (!isManager) {
+      return { allowed: false, reason: `เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่มีสิทธิ์สั่งแก้และส่งงานกลับ` };
+    }
+  }
+
+  // 2. CONTENT & QA GATES
   if (targetStatus === 'script_review' || targetStatus === 'script_done') {
     if (!card.script || card.script.trim().length < 10) {
       return { allowed: false, reason: 'กรุณาพิมพ์บทคอนเทนต์ก่อนส่งตรวจบท' };
@@ -3076,6 +3132,10 @@ function populatePlatformFilter() {
 // REVISION TARGET DISPATCHER (ส่งให้คนตัดต่อแก้ vs ส่งให้คนเขียนบทแก้)
 // ============================================================================
 function rejectCardToTarget(targetRole) {
+  if (!isQcManager(activeMember)) {
+    alert(`❌ เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่มีสิทธิ์สั่งแก้และส่งงานกลับ (${activeMember ? activeMember.name : 'คนเขียนบท'} ไม่มีสิทธิ์สั่งแก้)`);
+    return;
+  }
   syncModalFieldsToCardObject();
   const card = cards.find(c => c.id === activeCardId);
   if (!card) return;
@@ -3133,9 +3193,10 @@ function updateCardModalStageVisibility(card) {
 
   const status = card ? card.status : 'idea_review';
 
-  // Toggle revision reject buttons box: ONLY show in QC review stages (3. บทเสร็จรอตรวจ, 5. ตัดเสร็จรอตรวจ, 6. รอลง)
+  // Toggle revision reject buttons box: ONLY show in QC review stages IF user is QC/Manager!
   if (revisionBox) {
-    if (status === 'script_review' || status === 'edit_review' || status === 'waiting_post') {
+    const isReviewStage = (status === 'script_review' || status === 'edit_review' || status === 'waiting_post');
+    if (isReviewStage && isQcManager(activeMember)) {
       revisionBox.classList.remove('hidden');
     } else {
       revisionBox.classList.add('hidden');
@@ -3220,72 +3281,110 @@ function renderWorkflowActionButtons(card) {
   if (!container) return;
   container.innerHTML = '';
 
+  const isManager = isQcManager(activeMember);
+  const actorName = activeMember ? activeMember.name : 'ทีมงาน';
+
   if (card.status === 'idea_review') {
-    container.innerHTML += `
-      <button type="button" onclick="saveAndMoveCard('writing')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-        อนุมัติไอเดีย → ไปเขียนบทต่อ
-      </button>
-    `;
+    if (isManager) {
+      container.innerHTML += `
+        <button type="button" onclick="saveAndMoveCard('writing')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> อนุมัติไอเดีย → ไปเขียนบทต่อ
+        </button>
+      `;
+    } else {
+      container.innerHTML += `
+        <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0"></i>
+          <div class="leading-snug">
+            <div class="font-bold">รอหัวหน้า (QC / Manager) อนุมัติไอเดีย</div>
+            <div class="text-[11px] text-amber-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติไอเดียเอง</div>
+          </div>
+        </div>
+      `;
+    }
   } else if (card.status === 'writing') {
     const check = validateMoveCard(card, 'script_review');
     if (check.allowed) {
       container.innerHTML += `
         <button type="button" onclick="saveAndMoveCard('script_review')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          ส่งบทเสร็จแล้ว → รอตรวจ/ปรับแก้
+          <i data-lucide="send" class="w-3.5 h-3.5"></i> ส่งบทเสร็จแล้ว → รอตรวจ/ปรับแก้
         </button>
       `;
     } else {
       container.innerHTML += `
-        <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">
-          🔒 ยังส่งไม่ได้: ${check.reason}
+        <div class="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-[11px] text-rose-800 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-rose-500 shrink-0"></i>
+          <div>${check.reason}</div>
         </div>
       `;
     }
   } else if (card.status === 'script_review') {
-    const check = validateMoveCard(card, 'script_done');
-    if (check.allowed) {
-      container.innerHTML += `
-        <button type="button" onclick="saveAndMoveCard('script_done')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          ✓ ตรวจบทผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
-        </button>
-      `;
+    if (isManager) {
+      const check = validateMoveCard(card, 'script_done');
+      if (check.allowed) {
+        container.innerHTML += `
+          <button type="button" onclick="saveAndMoveCard('script_done')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i> ✓ ตรวจบทผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
+          </button>
+        `;
+      } else {
+        container.innerHTML += `
+          <div class="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-[11px] text-rose-800 flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+            <div>${check.reason}</div>
+          </div>
+        `;
+      }
     } else {
       container.innerHTML += `
-        <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
+        <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0"></i>
+          <div class="leading-snug">
+            <div class="font-bold">อยู่ระหว่างรอหัวหน้า (QC) ตรวจบท & สั่งแก้</div>
+            <div class="text-[11px] text-amber-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติบทตัวเอง</div>
+          </div>
+        </div>
       `;
     }
   } else if (card.status === 'script_done') {
     container.innerHTML += `
       <button type="button" onclick="saveAndMoveCard('edit_review')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-        ตัดต่อเสร็จแล้ว → ส่งตรวจคลิป
+        <i data-lucide="send" class="w-3.5 h-3.5"></i> ตัดต่อเสร็จแล้ว → ส่งตรวจคลิป
       </button>
     `;
   } else if (card.status === 'edit_review') {
-    const check = validateMoveCard(card, 'waiting_post');
-    if (check.allowed) {
-      container.innerHTML += `
-        <button type="button" onclick="saveAndMoveCard('waiting_post')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          ✓ คลิปผ่านแล้ว → ย้ายไป "6. รอลง"
-        </button>
-      `;
+    if (isManager) {
+      const check = validateMoveCard(card, 'waiting_post');
+      if (check.allowed) {
+        container.innerHTML += `
+          <button type="button" onclick="saveAndMoveCard('waiting_post')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i> ✓ คลิปผ่านแล้ว → ย้ายไป "6. รอลง"
+          </button>
+        `;
+      } else {
+        container.innerHTML += `
+          <div class="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-[11px] text-rose-800 flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+            <div>${check.reason}</div>
+          </div>
+        `;
+      }
     } else {
       container.innerHTML += `
-        <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
+        <div class="p-2.5 rounded-lg border border-violet-200 bg-violet-50 text-xs text-violet-900 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-violet-600 shrink-0"></i>
+          <div class="leading-snug">
+            <div class="font-bold">อยู่ระหว่างรอหัวหน้า (QC) ตรวจเช็คคลิป & สั่งแก้</div>
+            <div class="text-[11px] text-violet-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติคลิปเอง</div>
+          </div>
+        </div>
       `;
     }
   } else if (card.status === 'waiting_post') {
     container.innerHTML += `
       <button type="button" onclick="saveAndMoveCard('posted')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-        โพสต์ขึ้นแล้ว → ย้ายไปเช็คช่องทาง
+        <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> ยืนยันโพสต์ขึ้นแล้ว → ย้ายเข้า "7. ลงแล้ว"
       </button>
-      <div class="grid grid-cols-2 gap-1.5 pt-1">
-        <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-          <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
-        </button>
-        <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
-        </button>
-      </div>
     `;
   } else if (card.status === 'posted') {
     const targets = tempChannels.filter(c => c.target);
