@@ -3129,8 +3129,18 @@ function updateCardModalStageVisibility(card) {
   const editorSec = document.getElementById('modal-editor-deliverable-section');
   const checklistSec = document.getElementById('modal-checklist-section');
   const scheduleSec = document.getElementById('modal-schedule-section');
+  const revisionBox = document.getElementById('modal-revision-buttons-box');
 
   const status = card ? card.status : 'idea_review';
+
+  // Toggle revision reject buttons box: ONLY show in QC review stages (3. บทเสร็จรอตรวจ, 5. ตัดเสร็จรอตรวจ, 6. รอลง)
+  if (revisionBox) {
+    if (status === 'script_review' || status === 'edit_review' || status === 'waiting_post') {
+      revisionBox.classList.remove('hidden');
+    } else {
+      revisionBox.classList.add('hidden');
+    }
+  }
 
   // 1. Stage 1: "1. ไอเดีย (รอตรวจ)" (idea_review)
   // Only show Idea Concept & News preview. Hide Script Editor, Typo Checker, QC Checklist, and Schedule.
@@ -3152,13 +3162,23 @@ function updateCardModalStageVisibility(card) {
     if (checklistSec) checklistSec.classList.add('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
   }
-  // 3. Stage 3 & 4: "3. บทเสร็จ (รอตรวจ)", "4. บทสมบูรณ์" (script_review, script_done)
-  // Show Script Generator, Word Attachment, Script Editor, AND QC Checklist. Hide Video Deliverable, Schedule.
-  else if (status === 'script_review' || status === 'script_done') {
+  // 3. Stage 3: "3. บทเสร็จ (รอตรวจ)" (script_review)
+  // QC checking script: Show script, writer reference, checklist.
+  else if (status === 'script_review') {
     if (ideaSec) ideaSec.classList.add('hidden');
     if (writerToolsSec) writerToolsSec.classList.remove('hidden');
     if (scriptSec) scriptSec.classList.remove('hidden');
     if (editorSec) editorSec.classList.add('hidden');
+    if (checklistSec) checklistSec.classList.remove('hidden');
+    if (scheduleSec) scheduleSec.classList.add('hidden');
+  }
+  // 3.5 Stage 4: "4. บทสมบูรณ์" (script_done)
+  // VIDEO EDITING IN PROGRESS: Hide writer tools (no word upload), show Video Deliverable (Path E:\...) for editor to fill.
+  else if (status === 'script_done') {
+    if (ideaSec) ideaSec.classList.add('hidden');
+    if (writerToolsSec) writerToolsSec.classList.add('hidden');
+    if (scriptSec) scriptSec.classList.remove('hidden');
+    if (editorSec) editorSec.classList.remove('hidden');
     if (checklistSec) checklistSec.classList.remove('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
   }
