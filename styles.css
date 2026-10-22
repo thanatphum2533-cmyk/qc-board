@@ -129,62 +129,104 @@
 }
 
 /* ============================================================================
-   CARD THEMES BY DESTINATION CHANNEL (สีการ์ดแยกตามช่อง 1, 2, 3, 4)
+   CARD THEMES BY DESTINATION CHANNEL (สีการ์ดแยกตามช่อง 1, 2, 3, 4, 5, 6...)
    ============================================================================ */
-/* ช่อง 1: Facebook — ฟ้า / น้ำเงิน */
+/* ช่อง 1: TikTok ช่อง 1 — ฟ้า Cyan สดใส */
 .card-theme-ch1 {
-  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 48px, #ffffff 100%) !important;
-  border-color: #bfdbfe !important;
+  background: linear-gradient(180deg, #ecfeff 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #a5f3fc !important;
   border-left-width: 5px !important;
-  border-left-color: #2563eb !important; /* Facebook Blue */
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-left-color: #06b6d4 !important; /* Cyan */
+  box-shadow: 0 1px 3px rgba(6, 182, 212, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 .card-theme-ch1:hover {
-  border-color: #60a5fa !important;
-  border-left-color: #1d4ed8 !important;
-  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.18), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  border-color: #67e8f9 !important;
+  border-left-color: #0891b2 !important;
+  box-shadow: 0 6px 16px -2px rgba(6, 182, 212, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* ช่อง 2: TikTok — สีดำ / Slate คมชัด */
+/* ช่อง 2: TikTok ช่อง 2 — ชมพู Fuchsia สด */
 .card-theme-ch2 {
-  background: linear-gradient(180deg, #f4f4f5 0%, #ffffff 48px, #ffffff 100%) !important;
-  border-color: #d4d4d8 !important;
+  background: linear-gradient(180deg, #fdf4ff 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #f5d0fe !important;
   border-left-width: 5px !important;
-  border-left-color: #18181b !important; /* TikTok Dark */
-  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-left-color: #d946ef !important; /* Fuchsia */
+  box-shadow: 0 1px 3px rgba(217, 70, 239, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 .card-theme-ch2:hover {
-  border-color: #a1a1aa !important;
-  border-left-color: #09090b !important;
-  box-shadow: 0 6px 16px -2px rgba(24, 24, 27, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  border-color: #f0abfc !important;
+  border-left-color: #c026d3 !important;
+  box-shadow: 0 6px 16px -2px rgba(217, 70, 239, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* ช่อง 3: IG / Reels — ชมพู / ม่วง Gradient */
+/* ช่อง 3: TikTok ช่อง 3 — ม่วง Violet/Purple */
 .card-theme-ch3 {
-  background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 48px, #ffffff 100%) !important;
-  border-color: #fbcfe8 !important;
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #ddd6fe !important;
   border-left-width: 5px !important;
-  border-left-color: #db2777 !important; /* Instagram Pink/Magenta */
-  box-shadow: 0 1px 3px rgba(219, 39, 119, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-left-color: #8b5cf6 !important; /* Purple */
+  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 .card-theme-ch3:hover {
-  border-color: #f472b6 !important;
-  border-left-color: #be185d !important;
-  box-shadow: 0 6px 16px -2px rgba(219, 39, 119, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  border-color: #c4b5fd !important;
+  border-left-color: #7c3aed !important;
+  box-shadow: 0 6px 16px -2px rgba(139, 92, 246, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* ช่อง 4: YouTube — แดงสดใส */
+/* ช่อง 4: TikTok ช่อง 4 — เขียว Emerald */
 .card-theme-ch4 {
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #a7f3d0 !important;
+  border-left-width: 5px !important;
+  border-left-color: #10b981 !important; /* Emerald */
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch4:hover {
+  border-color: #6ee7b7 !important;
+  border-left-color: #059669 !important;
+  box-shadow: 0 6px 16px -2px rgba(16, 185, 129, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่อง 5: YouTube — แดงสดใส */
+.card-theme-ch5 {
   background: linear-gradient(180deg, #fef2f2 0%, #ffffff 48px, #ffffff 100%) !important;
   border-color: #fecaca !important;
   border-left-width: 5px !important;
-  border-left-color: #dc2626 !important; /* YouTube Red */
-  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-left-color: #ef4444 !important; /* YouTube Red */
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
-.card-theme-ch4:hover {
+.card-theme-ch5:hover {
   border-color: #f87171 !important;
-  border-left-color: #b91c1c !important;
-  box-shadow: 0 6px 16px -2px rgba(220, 38, 38, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  border-left-color: #dc2626 !important;
+  box-shadow: 0 6px 16px -2px rgba(239, 68, 68, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่อง 6: Facebook — น้ำเงินเข้ม */
+.card-theme-ch6 {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #bfdbfe !important;
+  border-left-width: 5px !important;
+  border-left-color: #2563eb !important; /* Facebook Blue */
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch6:hover {
+  border-color: #60a5fa !important;
+  border-left-color: #1d4ed8 !important;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.22), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่องทางสำรอง / เพิ่มเติม (Ch7+) */
+.card-theme-ch7 {
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #fde68a !important;
+  border-left-width: 5px !important;
+  border-left-color: #f59e0b !important; /* Amber */
+}
+.card-theme-ch8 {
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #bbf7d0 !important;
+  border-left-width: 5px !important;
+  border-left-color: #22c55e !important; /* Green */
 }
 
 .trello-card:hover {

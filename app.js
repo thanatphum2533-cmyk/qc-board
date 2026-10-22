@@ -36,13 +36,15 @@ const DEFAULT_COLUMNS = [
   { id: 'posted', title: '7. ลงแล้ว (เช็คช่องทาง)', subtitle: 'เช็คครบ ช่อง 1, 2, 3...', isCore: true, dot: 'bg-emerald-500' }
 ];
 
-const STORAGE_KEY_CHANNELS = 'qc_board_channels_v4';
+const STORAGE_KEY_CHANNELS = 'qc_board_channels_v5';
 
 const DEFAULT_CHANNELS = [
-  { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', theme: 'ch1', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' },
-  { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'ช่อง 2 · TikTok', theme: 'ch2', dot: 'bg-zinc-900', badgeBg: 'bg-zinc-900 text-white border-zinc-950' },
-  { id: 'ch3', name: 'ช่อง 3 · IG Reels', short: 'ช่อง 3 · IG', theme: 'ch3', dot: 'bg-gradient-to-r from-purple-500 to-pink-500', badgeBg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' },
-  { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'ช่อง 4 · YouTube', theme: 'ch4', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' }
+  { id: 'ch1', name: 'TikTok ช่อง 1', short: 'TikTok 1', theme: 'ch1', dot: 'bg-cyan-500', badgeBg: 'bg-cyan-600 text-white border-cyan-700' },
+  { id: 'ch2', name: 'TikTok ช่อง 2', short: 'TikTok 2', theme: 'ch2', dot: 'bg-fuchsia-500', badgeBg: 'bg-fuchsia-600 text-white border-fuchsia-700' },
+  { id: 'ch3', name: 'TikTok ช่อง 3', short: 'TikTok 3', theme: 'ch3', dot: 'bg-purple-500', badgeBg: 'bg-purple-600 text-white border-purple-700' },
+  { id: 'ch4', name: 'TikTok ช่อง 4', short: 'TikTok 4', theme: 'ch4', dot: 'bg-emerald-500', badgeBg: 'bg-emerald-600 text-white border-emerald-700' },
+  { id: 'ch5', name: 'YouTube', short: 'YouTube', theme: 'ch5', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' },
+  { id: 'ch6', name: 'Facebook', short: 'Facebook', theme: 'ch6', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' }
 ];
 
 let boardChannels = [...DEFAULT_CHANNELS];
@@ -182,6 +184,16 @@ function offsetDateTimeLocal(hoursOffset) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function makeDemoChannels(activeIds = ['ch1']) {
+  return DEFAULT_CHANNELS.map(ch => ({
+    id: ch.id,
+    name: ch.name,
+    short: ch.short,
+    target: activeIds.includes(ch.id),
+    posted: false
+  }));
+}
+
 function getInitialDemoCards() {
   return [
     {
@@ -197,15 +209,11 @@ function getInitialDemoCards() {
       draftDeadline: offsetDateTimeLocal(18),
       publishTime: offsetDateTimeLocal(42),
       primaryChannel: 'ch1',
+      customChannel: 'TikTok ช่อง 1',
       revisionTarget: null,
       script: 'แนวทางคอนเทนต์: สรุปประเด็นจากข่าว สอดแทรกสาระสุขภาพเรื่องการดูแลภูมิคุ้มกัน รอหัวหน้าอนุมัติประเด็น',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: true, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
+      channels: makeDemoChannels(['ch1', 'ch2']),
       scheduleLink: '',
       scheduleImage: '',
       feedback: '',
@@ -226,6 +234,7 @@ function getInitialDemoCards() {
       draftDeadline: offsetDateTimeLocal(-2),
       publishTime: offsetDateTimeLocal(14),
       primaryChannel: 'ch2',
+      customChannel: 'TikTok ช่อง 2',
       revisionTarget: null,
       script: 'สวัสดีคะทุกคน! วันนี้ วันนี้ แอดมินมีข้อสังเกตสุขภาพมาอัพเดทให้ฟังกันนะค่ะ ใครสงสัยว่าร่างกายขาดสารอาหารไหมค่ะ สามารถดูตามนี้ได้เลยเลยค่ะ',
       checklist: [
@@ -234,12 +243,7 @@ function getInitialDemoCards() {
         { id: 'chk3', text: 'ตรวจซับไตเติลในคลิปและข้อความบนภาพปกว่าไม่มีคำผิด', done: false },
         { id: 'chk4', text: 'เช็ควันและเวลาลงโพสต์ของแต่ละช่อง (ช่อง 1, 2, 3...) ถูกต้อง', done: false }
       ],
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: true, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
+      channels: makeDemoChannels(['ch2']),
       scheduleLink: '',
       scheduleImage: '',
       feedback: 'ไอเดียผ่านแล้ว ร่างบทได้เลย ตรวจคำผิดให้ครบก่อนส่งตรวจนะ',
@@ -259,16 +263,12 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(3),
       publishTime: offsetDateTimeLocal(28),
-      primaryChannel: 'ch1',
+      primaryChannel: 'ch3',
+      customChannel: 'TikTok ช่อง 3',
       revisionTarget: 'writer',
       script: 'สังเกตไหมคะว่าทำไมยิ่งเหนื่อยยิ่งนอนไม่หลับ? สาเหตุเกิดจากระดับฮอร์โมนคอร์ติซอลที่คั่งค้างในร่างกาย ลองปรับพฤติกรรม 3 ข้อนี้ก่อนนอนดูนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: true, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
+      channels: makeDemoChannels(['ch3']),
       scheduleLink: '',
       scheduleImage: '',
       feedback: 'ขอปรับฮุกต้นคลิปให้น่าสนใจขึ้นอีกนิด',
@@ -288,16 +288,12 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-8),
       publishTime: offsetDateTimeLocal(22),
-      primaryChannel: 'ch3',
+      primaryChannel: 'ch4',
+      customChannel: 'TikTok ช่อง 4',
       revisionTarget: null,
       script: 'หลายคนกลัวคำว่าคอเลสเตอรอล แต่รู้หรือไม่ว่าร่างกายเราต้องการ HDL ซึ่งเป็นไขมันดีในการปกป้องหลอดเลือดหัวใจ อ่านรายละเอียดในภาพได้เลยนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: false, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
+      channels: makeDemoChannels(['ch4']),
       scheduleLink: '',
       scheduleImage: '',
       feedback: 'บทผ่าน 100% ส่งทีมกราฟิกจัดทำภาพได้เลย',
@@ -317,22 +313,18 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-16),
       publishTime: offsetDateTimeLocal(8),
-      primaryChannel: 'ch1',
+      primaryChannel: 'ch5',
+      customChannel: 'YouTube',
       revisionTarget: null,
       script: 'สัมภาษณ์พิเศษตอนที่ 1: เจาะลึกความสำคัญของไมโครไบโอมในลำไส้ที่ส่งผลต่ออารมณ์และระบบภูมิคุ้มกัน พร้อมคำแนะนำเรื่องการรับประทานโพรไบโอติกส์อย่างถูกวิธี',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: false, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: false, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: true, posted: false }
-      ],
+      channels: makeDemoChannels(['ch5']),
       scheduleLink: 'Google Drive Draft v2: drive.google.com/clip-05-health',
       scheduleImage: '',
-      videoPath: 'E:\\2026-10-20 หมอชุดฟ้า 7\\ช่อง 1\\นอนเยอะ',
+      videoPath: 'E:\\2026-10-20 หมอชุดฟ้า 7\\YouTube\\นอนเยอะ',
       videoLink: 'https://drive.google.com/drive/folders/health-expert-05',
       videoDuration: '01:45 นาที',
-      videoRatio: '9:16',
+      videoRatio: '16:9',
       videoNotes: 'ใส่ซับไตเติลตัวหนา ชัดเจน ดนตรีคลอเบาๆ ตัดต่อเสร็จสมบูรณ์',
       feedback: 'ตัดต่อเสร็จแล้ว รอหัวหน้าตรวจเช็คซับไตเติล',
       history: [
@@ -351,17 +343,13 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-24),
       publishTime: offsetDateTimeLocal(2),
-      primaryChannel: 'ch4',
+      primaryChannel: 'ch6',
+      customChannel: 'Facebook',
       revisionTarget: null,
       script: 'รวมคำถามสุขภาพยอดฮิตที่แฟนเพจสอบถามเข้ามามากที่สุดตลอดสัปดาห์นี้ พร้อมคำตอบสั้นกระชับเข้าใจง่าย นำไปปรับใช้ได้จริงค่ะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: false },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: true, posted: false },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: false },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
-      scheduleLink: 'ตั้งเวลาใน Meta Business Suite และ TikTok Studio เรียบร้อยแล้ว (เวลา 14:00 น.)',
+      channels: makeDemoChannels(['ch6']),
+      scheduleLink: 'ตั้งเวลาใน Meta Business Suite เรียบร้อยแล้ว (เวลา 14:00 น.)',
       scheduleImage: '',
       feedback: 'ตรวจผ่านเรียบร้อย รอระบบโพสต์ตามเวลาที่ตั้งไว้',
       history: [
@@ -380,16 +368,12 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-48),
       publishTime: offsetDateTimeLocal(-3),
-      primaryChannel: 'ch2',
+      primaryChannel: 'ch1',
+      customChannel: 'TikTok ช่อง 1',
       revisionTarget: null,
       script: 'พฤติกรรมนั่งไขว่ห้าง ยกของหนักผิดท่า และการดื่มน้ำอัดลมเป็นประจำ ส่งผลเสียต่อสุขภาพกระดูกในระยะยาว มาปรับเปลี่ยนเพื่อสุขภาพที่ดีกันนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
-      channels: [
-        { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB', target: true, posted: true },
-        { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT', target: true, posted: true },
-        { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG', target: true, posted: true },
-        { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT', target: false, posted: false }
-      ],
+      channels: makeDemoChannels(['ch1']),
       scheduleLink: 'ลงโพสต์เรียบร้อยทุกช่องทาง',
       scheduleImage: '',
       feedback: 'โพสต์ขึ้นครบทุกช่องทาง เช็คยอดรีชและคอมเมนต์ตามปกติ',
@@ -2855,9 +2839,10 @@ function autoSuggestVideoPath() {
   const dd = String(now.getDate()).padStart(2, '0');
   const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  // Channel name based on primaryChannel
+  // Channel name based on primaryChannel and customChannel
   const primCh = card ? (card.primaryChannel || 'ch1') : 'ch1';
-  const chFolderName = primCh === 'ch1' ? 'ช่อง 1' : (primCh === 'ch2' ? 'ช่อง 2' : (primCh === 'ch3' ? 'ช่อง 3' : 'ช่อง 4'));
+  const b = getChannelBadge(primCh, card?.customChannel);
+  const chFolderName = card?.customChannel ? card.customChannel : (b.short || b.name || 'ช่อง 1');
 
   // Title short name
   const rawTitle = (card && card.title) ? card.title.trim() : 'นอนเยอะ';
@@ -2905,8 +2890,13 @@ function loadChannels() {
     } else {
       boardChannels = [...DEFAULT_CHANNELS];
     }
-    if (!Array.isArray(boardChannels) || boardChannels.length === 0) {
+    // Auto upgrade if channels is missing or is old preset without TikTok ช่อง 1
+    const isOldPreset = Array.isArray(boardChannels) &&
+      (!boardChannels.some(c => (c.name || '').includes('TikTok ช่อง 1')) || boardChannels.length < 5);
+
+    if (!Array.isArray(boardChannels) || boardChannels.length === 0 || isOldPreset) {
       boardChannels = [...DEFAULT_CHANNELS];
+      saveChannels();
     }
   } catch (e) {
     boardChannels = [...DEFAULT_CHANNELS];
@@ -2930,40 +2920,57 @@ function getChannelBadge(chId, customChannelName) {
       id: found.id,
       name: displayName,
       short: customChannelName || found.short || found.name,
-      bg: found.badgeBg || 'bg-zinc-900 text-white',
-      dot: found.dot || 'bg-zinc-700',
+      bg: found.badgeBg || 'bg-cyan-600 text-white border-cyan-700',
+      dot: found.dot || 'bg-cyan-500',
       theme: found.theme || chId
     };
   }
   return {
     id: chId || 'ch1',
-    name: customChannelName || 'ช่อง 1 · Facebook',
-    short: customChannelName || 'ช่อง 1',
-    bg: 'bg-blue-600 text-white border-blue-700',
-    dot: 'bg-blue-600',
+    name: customChannelName || 'TikTok ช่อง 1',
+    short: customChannelName || 'TikTok 1',
+    bg: 'bg-cyan-600 text-white border-cyan-700',
+    dot: 'bg-cyan-500',
     theme: chId || 'ch1'
   };
 }
 
 function renderChannelQuickPills() {
   const container = document.getElementById('channel-quick-pills');
-  if (!container) return;
-  container.innerHTML = '';
-
+  const delivContainer = document.getElementById('deliverable-channel-pills');
   const activePrim = (activeCardId && cards.find(c => c.id === activeCardId)?.primaryChannel) || 'ch1';
 
-  (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
-    const isSelected = ch.id === activePrim;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = `btn-ch-${ch.id}`;
-    btn.onclick = () => setPrimaryChannel(ch.id);
-    btn.className = isSelected
-      ? 'py-2 px-2.5 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition ring-2 ring-zinc-900 bg-white shadow-sm text-zinc-900 border-zinc-400'
-      : 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-70 bg-zinc-50 hover:opacity-100 text-zinc-700 border-zinc-200';
-    btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full ${ch.dot || 'bg-blue-600'} shrink-0 shadow-sm"></span> <span class="truncate">${escapeHtml(ch.name)}</span>`;
-    container.appendChild(btn);
-  });
+  if (container) {
+    container.innerHTML = '';
+    (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
+      const isSelected = ch.id === activePrim;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = `btn-ch-${ch.id}`;
+      btn.onclick = () => setPrimaryChannel(ch.id);
+      btn.className = isSelected
+        ? 'py-2 px-2.5 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition ring-2 ring-zinc-900 bg-white shadow-sm text-zinc-900 border-zinc-400'
+        : 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-70 bg-zinc-50 hover:opacity-100 text-zinc-700 border-zinc-200';
+      btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full ${ch.dot || 'bg-cyan-500'} shrink-0 shadow-sm"></span> <span class="truncate">${escapeHtml(ch.name)}</span>`;
+      container.appendChild(btn);
+    });
+  }
+
+  if (delivContainer) {
+    delivContainer.innerHTML = '';
+    (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
+      const isSelected = ch.id === activePrim;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = `btn-deliv-ch-${ch.id}`;
+      btn.onclick = () => setPrimaryChannel(ch.id);
+      btn.className = isSelected
+        ? 'py-1 px-2.5 rounded-md border text-xs font-bold flex items-center gap-1.5 transition ring-2 ring-purple-600 bg-white shadow-sm text-purple-900 border-purple-400'
+        : 'py-1 px-2.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition opacity-75 bg-purple-50 hover:opacity-100 text-zinc-700 border-purple-200';
+      btn.innerHTML = `<span class="w-2 h-2 rounded-full ${ch.dot || 'bg-cyan-500'} shrink-0"></span> <span class="truncate">${escapeHtml(ch.name)}</span>`;
+      delivContainer.appendChild(btn);
+    });
+  }
 }
 
 function setPrimaryChannel(chId) {
@@ -2977,8 +2984,6 @@ function setPrimaryChannel(chId) {
   // If user hasn't typed a custom channel, sync with channel name
   if (chObj && (!card.customChannel || boardChannels.some(b => b.name === card.customChannel))) {
     card.customChannel = chObj.name;
-    const customInp = document.getElementById('modal-custom-channel');
-    if (customInp) customInp.value = chObj.name;
   }
 
   renderPrimaryChannelUI(chId);
@@ -2996,10 +3001,25 @@ function updateCustomChannelFromInput(val) {
   if (!card) return;
 
   card.customChannel = val.trim();
+
+  // Sync both input fields
+  const topInp = document.getElementById('modal-custom-channel');
+  const delivInp = document.getElementById('modal-deliverable-custom-channel');
+  if (topInp && topInp.value !== val) topInp.value = val;
+  if (delivInp && delivInp.value !== val) delivInp.value = val;
+
+  const b = getChannelBadge(card.primaryChannel, card.customChannel);
   const indicator = document.getElementById('primary-channel-indicator');
   if (indicator) {
-    indicator.textContent = card.customChannel || (getChannelBadge(card.primaryChannel).name);
+    indicator.textContent = b.name;
+    indicator.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${b.bg}`;
   }
+  const delivBadge = document.getElementById('deliverable-channel-badge');
+  if (delivBadge) {
+    delivBadge.textContent = b.name;
+    delivBadge.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${b.bg}`;
+  }
+
   syncModalFieldsToCardObject();
   saveState();
   renderBoard();
@@ -3009,10 +3029,17 @@ function renderPrimaryChannelUI(chId) {
   const card = activeCardId ? cards.find(c => c.id === activeCardId) : null;
   const primCh = chId || (card && card.primaryChannel) || 'ch1';
   const badge = getChannelBadge(primCh, card?.customChannel);
+
   const indicator = document.getElementById('primary-channel-indicator');
   if (indicator) {
     indicator.textContent = badge.name;
     indicator.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${badge.bg}`;
+  }
+
+  const delivBadge = document.getElementById('deliverable-channel-badge');
+  if (delivBadge) {
+    delivBadge.textContent = badge.name;
+    delivBadge.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${badge.bg}`;
   }
 
   (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
@@ -3024,11 +3051,24 @@ function renderPrimaryChannelUI(chId) {
         btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-70 bg-zinc-50 hover:opacity-100 text-zinc-700 border-zinc-200';
       }
     }
+
+    const delivBtn = document.getElementById(`btn-deliv-ch-${ch.id}`);
+    if (delivBtn) {
+      if (ch.id === primCh) {
+        delivBtn.className = 'py-1 px-2.5 rounded-md border text-xs font-bold flex items-center gap-1.5 transition ring-2 ring-purple-600 bg-white shadow-sm text-purple-900 border-purple-400';
+      } else {
+        delivBtn.className = 'py-1 px-2.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition opacity-75 bg-purple-50 hover:opacity-100 text-zinc-700 border-purple-200';
+      }
+    }
   });
 
   const customInp = document.getElementById('modal-custom-channel');
   if (customInp && card) {
     customInp.value = card.customChannel || '';
+  }
+  const delivInp = document.getElementById('modal-deliverable-custom-channel');
+  if (delivInp && card) {
+    delivInp.value = card.customChannel || '';
   }
 }
 
@@ -3079,16 +3119,20 @@ function updateChannelName(chId, newName) {
 }
 
 function promptAddNewChannel() {
-  const name = prompt('กรุณาระบุชื่อช่องใหม่ (เช่น ช่อง 5 · Threads หรือ เพจสำรอง):');
+  const name = prompt('กรุณาระบุชื่อช่องใหม่ (เช่น TikTok ช่อง 5 หรือ YouTube Shorts):');
   if (!name || !name.trim()) return;
   const cleanName = name.trim();
   const nextNum = boardChannels.length + 1;
   const newId = 'ch' + nextNum;
   const colors = [
-    { theme: 'ch1', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' },
-    { theme: 'ch2', dot: 'bg-zinc-900', badgeBg: 'bg-zinc-900 text-white border-zinc-950' },
-    { theme: 'ch3', dot: 'bg-gradient-to-r from-purple-500 to-pink-500', badgeBg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' },
-    { theme: 'ch4', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' }
+    { theme: 'ch1', dot: 'bg-cyan-500', badgeBg: 'bg-cyan-600 text-white border-cyan-700' },
+    { theme: 'ch2', dot: 'bg-fuchsia-500', badgeBg: 'bg-fuchsia-600 text-white border-fuchsia-700' },
+    { theme: 'ch3', dot: 'bg-purple-500', badgeBg: 'bg-purple-600 text-white border-purple-700' },
+    { theme: 'ch4', dot: 'bg-emerald-500', badgeBg: 'bg-emerald-600 text-white border-emerald-700' },
+    { theme: 'ch5', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' },
+    { theme: 'ch6', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' },
+    { theme: 'ch7', dot: 'bg-amber-500', badgeBg: 'bg-amber-600 text-white border-amber-700' },
+    { theme: 'ch8', dot: 'bg-teal-500', badgeBg: 'bg-teal-600 text-white border-teal-700' }
   ];
   const colorObj = colors[(nextNum - 1) % colors.length];
 
@@ -3427,7 +3471,10 @@ function syncModalFieldsToCardObject() {
   card.contentType = document.getElementById('modal-content-type').value;
   card.draftDeadline = newDraftDl;
   card.publishTime = newPubTime;
-  card.customChannel = (document.getElementById('modal-custom-channel')?.value || '').trim();
+  const customChVal = document.getElementById('modal-deliverable-custom-channel')?.value ?? document.getElementById('modal-custom-channel')?.value;
+  if (customChVal !== undefined) {
+    card.customChannel = customChVal.trim();
+  }
   card.ideaNotes = document.getElementById('modal-idea-notes')?.value || card.ideaNotes || '';
   card.script = newScript;
   card.scheduleLink = document.getElementById('modal-schedule-link').value.trim();
