@@ -1492,6 +1492,13 @@ function validateMoveCard(card, targetStatus) {
     }
   }
 
+  if (targetStatus === 'edit_review') {
+    const isVideo = (card.contentType || '').includes('คลิป');
+    if (isVideo && !card.videoPath && !card.videoLink) {
+      return { allowed: false, reason: 'กรุณาระบุที่เก็บไฟล์ตัดต่อ (Path โฟลเดอร์ในเครื่อง เช่น E:\\... หรือวางลิงก์คลิป) ก่อนส่งตรวจคลิป' };
+    }
+  }
+
   if (targetStatus === 'waiting_post') {
     if (typos.length > 0) {
       return { allowed: false, reason: 'พบคำผิดในบท กรุณาแก้ไขก่อนนำไปตั้งเวลาโพสต์' };
