@@ -192,6 +192,8 @@ function getInitialDemoCards() {
       newsThumb: makeNewsSvgThumb('เทรนด์สุขภาพ 2026', 'THAIRATH HEALTH', '#0f172a', '#1e293b'),
       draftDeadline: offsetDateTimeLocal(18),
       publishTime: offsetDateTimeLocal(42),
+      primaryChannel: 'ch1',
+      revisionTarget: null,
       script: 'แนวทางคอนเทนต์: สรุปประเด็นจากข่าว สอดแทรกสาระสุขภาพเรื่องการดูแลภูมิคุ้มกัน รอหัวหน้าอนุมัติประเด็น',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
       channels: [
@@ -219,6 +221,8 @@ function getInitialDemoCards() {
       newsThumb: makeNewsSvgThumb('5 สัญญาณเตือนขาดวิตามิน', 'THE STANDARD', '#18181b', '#27272a'),
       draftDeadline: offsetDateTimeLocal(-2),
       publishTime: offsetDateTimeLocal(14),
+      primaryChannel: 'ch2',
+      revisionTarget: null,
       script: 'สวัสดีคะทุกคน! วันนี้ วันนี้ แอดมินมีข้อสังเกตสุขภาพมาอัพเดทให้ฟังกันนะค่ะ ใครสงสัยว่าร่างกายขาดสารอาหารไหมค่ะ สามารถดูตามนี้ได้เลยเลยค่ะ',
       checklist: [
         { id: 'chk1', text: 'อ่านทวนบทและสคริปต์ออกเสียง 1 รอบ (ไม่มีคำผิด/คำตกหล่น)', done: false },
@@ -251,6 +255,8 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(3),
       publishTime: offsetDateTimeLocal(28),
+      primaryChannel: 'ch1',
+      revisionTarget: 'writer',
       script: 'สังเกตไหมคะว่าทำไมยิ่งเหนื่อยยิ่งนอนไม่หลับ? สาเหตุเกิดจากระดับฮอร์โมนคอร์ติซอลที่คั่งค้างในร่างกาย ลองปรับพฤติกรรม 3 ข้อนี้ก่อนนอนดูนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
       channels: [
@@ -278,6 +284,8 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-8),
       publishTime: offsetDateTimeLocal(22),
+      primaryChannel: 'ch3',
+      revisionTarget: null,
       script: 'หลายคนกลัวคำว่าคอเลสเตอรอล แต่รู้หรือไม่ว่าร่างกายเราต้องการ HDL ซึ่งเป็นไขมันดีในการปกป้องหลอดเลือดหัวใจ อ่านรายละเอียดในภาพได้เลยนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
       channels: [
@@ -305,6 +313,8 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-16),
       publishTime: offsetDateTimeLocal(8),
+      primaryChannel: 'ch1',
+      revisionTarget: null,
       script: 'สัมภาษณ์พิเศษตอนที่ 1: เจาะลึกความสำคัญของไมโครไบโอมในลำไส้ที่ส่งผลต่ออารมณ์และระบบภูมิคุ้มกัน พร้อมคำแนะนำเรื่องการรับประทานโพรไบโอติกส์อย่างถูกวิธี',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
       channels: [
@@ -337,6 +347,8 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-24),
       publishTime: offsetDateTimeLocal(2),
+      primaryChannel: 'ch4',
+      revisionTarget: null,
       script: 'รวมคำถามสุขภาพยอดฮิตที่แฟนเพจสอบถามเข้ามามากที่สุดตลอดสัปดาห์นี้ พร้อมคำตอบสั้นกระชับเข้าใจง่าย นำไปปรับใช้ได้จริงค่ะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
       channels: [
@@ -1926,6 +1938,17 @@ function createTrelloCardElement(card) {
     typoBadgeHtml = `<span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded">ผ่านตรวจคำผิด</span>`;
   }
 
+  // Primary Channel & Revision Badge
+  const primCh = card.primaryChannel || ((card.channels || []).find(c => c.target)?.id) || 'ch1';
+  const chBadge = getChannelBadge(primCh);
+
+  let revisionBadgeHtml = '';
+  if (card.revisionTarget === 'editor') {
+    revisionBadgeHtml = `<span class="text-[10px] font-bold text-purple-800 bg-purple-100 border border-purple-300 px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">⚠️ ส่งคนตัดต่อแก้</span>`;
+  } else if (card.revisionTarget === 'writer') {
+    revisionBadgeHtml = `<span class="text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">⚠️ ส่งคนเขียนบทแก้</span>`;
+  }
+
   // Video Deliverable Badge (For Editor / Poster)
   let videoBadgeHtml = '';
   if (card.videoPath) {
@@ -1953,6 +1976,12 @@ function createTrelloCardElement(card) {
   cardEl.innerHTML = `
     ${newsCoverHtml}
     <div class="p-3 space-y-2">
+      <div class="flex items-center justify-between gap-1 flex-wrap">
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1 ${chBadge.bg}">
+          ${chBadge.short}
+        </span>
+        ${revisionBadgeHtml}
+      </div>
       ${channelPillsHtml ? `<div class="flex flex-wrap gap-1">${channelPillsHtml}</div>` : ''}
       <div class="text-[13px] font-medium text-zinc-900 leading-snug tracking-tight">${escapeHtml(card.title)}</div>
       ${card.feedback ? `<div class="text-[11px] bg-amber-50/80 border border-amber-200/80 text-amber-900 px-2 py-1 rounded">💬 ${escapeHtml(card.feedback)}</div>` : ''}
@@ -2034,6 +2063,8 @@ async function submitQuickAddCard(colId) {
     videoDuration: '',
     videoRatio: '9:16',
     videoNotes: '',
+    primaryChannel: 'ch1',
+    revisionTarget: null,
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2242,6 +2273,8 @@ function openCreateModal(defaultStatus = 'idea_review') {
     videoDuration: '',
     videoRatio: '9:16',
     videoNotes: '',
+    primaryChannel: 'ch1',
+    revisionTarget: null,
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
     channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
     scheduleLink: '',
@@ -2350,6 +2383,26 @@ function openCardModal(cardId) {
   renderModalChecklist();
   renderProofImagePreview();
   renderWordFilePreview();
+
+  const primCh = card.primaryChannel || ((card.channels || []).find(c => c.target)?.id) || 'ch1';
+  card.primaryChannel = primCh;
+  renderPrimaryChannelUI(primCh);
+
+  const revBadge = document.getElementById('revision-status-badge');
+  if (revBadge) {
+    if (card.revisionTarget === 'editor') {
+      revBadge.textContent = '⚠️ ส่งคนตัดต่อแก้';
+      revBadge.className = 'text-[10px] font-bold text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded';
+      revBadge.classList.remove('hidden');
+    } else if (card.revisionTarget === 'writer') {
+      revBadge.textContent = '⚠️ ส่งคนเขียนบทแก้';
+      revBadge.className = 'text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded';
+      revBadge.classList.remove('hidden');
+    } else {
+      revBadge.classList.add('hidden');
+    }
+  }
+
   runTypoCheck();
   renderWorkflowActionButtons(card);
   updateCardModalStageVisibility(card);
@@ -2707,18 +2760,18 @@ function autoSuggestVideoPath() {
   const dd = String(now.getDate()).padStart(2, '0');
   const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  // Channel name (e.g. ช่อง 1)
-  const targetCh = card && card.channels ? card.channels.find(ch => ch.target) : null;
-  const channelName = targetCh ? (targetCh.short || targetCh.name) : 'ช่อง 1';
+  // Channel name based on primaryChannel
+  const primCh = card ? (card.primaryChannel || 'ch1') : 'ch1';
+  const chFolderName = primCh === 'ch1' ? 'ช่อง 1' : (primCh === 'ch2' ? 'ช่อง 2' : (primCh === 'ch3' ? 'ช่อง 3' : 'ช่อง 4'));
 
   // Title short name
   const rawTitle = (card && card.title) ? card.title.trim() : 'นอนเยอะ';
   const shortTitle = rawTitle.length > 25 ? rawTitle.substring(0, 25).trim() : rawTitle;
 
-  const suggested = `E:\\${dateStr} หมอชุดฟ้า 7\\${channelName}\\${shortTitle}`;
+  const suggested = `E:\\${dateStr} หมอชุดฟ้า 7\\${chFolderName}\\${shortTitle}`;
   pathInput.value = suggested;
   syncModalFieldsToCardObject();
-  showToast(`📁 แนะนำโครงสร้าง Path: ${suggested}`);
+  showToast(`📁 แนะนำโครงสร้าง Path (${chFolderName}): ${suggested}`);
 }
 
 function openVideoPreviewLink() {
@@ -2744,6 +2797,113 @@ function copyScriptText() {
   navigator.clipboard.writeText(text).then(() => {
     showToast('📋 คัดลอกบท/แคปชั่นลงคลิปบอร์ดแล้ว');
   });
+}
+
+// ============================================================================
+// PRIMARY DESTINATION CHANNEL HELPERS ("บทนี้ลงช่องไหน")
+// ============================================================================
+function getChannelBadge(chId) {
+  if (chId === 'ch1') {
+    return { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', bg: 'bg-blue-600 text-white border-blue-700' };
+  } else if (chId === 'ch2') {
+    return { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'ช่อง 2 · TikTok', bg: 'bg-zinc-900 text-white border-zinc-950' };
+  } else if (chId === 'ch3') {
+    return { id: 'ch3', name: 'ช่อง 3 · IG Reels', short: 'ช่อง 3 · IG', bg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' };
+  } else if (chId === 'ch4') {
+    return { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'ช่อง 4 · YouTube', bg: 'bg-red-600 text-white border-red-700' };
+  }
+  return { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', bg: 'bg-blue-600 text-white border-blue-700' };
+}
+
+function setPrimaryChannel(chId) {
+  if (!activeCardId) return;
+  const card = cards.find(c => c.id === activeCardId);
+  if (!card) return;
+
+  card.primaryChannel = chId;
+
+  // Ensure this channel is marked target in tempChannels
+  if (Array.isArray(tempChannels)) {
+    const ch = tempChannels.find(c => c.id === chId);
+    if (ch) ch.target = true;
+  }
+
+  renderPrimaryChannelUI(chId);
+  renderModalChannels();
+  syncModalFieldsToCardObject();
+
+  const b = getChannelBadge(chId);
+  showToast(`📺 กำหนดช่องทางหลัก: ${b.name}`);
+}
+
+function renderPrimaryChannelUI(chId) {
+  const badge = getChannelBadge(chId);
+  const indicator = document.getElementById('primary-channel-indicator');
+  if (indicator) {
+    indicator.textContent = badge.name;
+    indicator.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${badge.bg}`;
+  }
+
+  ['ch1', 'ch2', 'ch3', 'ch4'].forEach(id => {
+    const btn = document.getElementById(`btn-ch-${id}`);
+    if (btn) {
+      if (id === chId) {
+        btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition ring-2 ring-zinc-900 bg-white shadow-sm text-zinc-900 border-zinc-400';
+      } else {
+        btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-60 bg-zinc-50 hover:opacity-100 text-zinc-600 border-zinc-200';
+      }
+    }
+  });
+}
+
+// ============================================================================
+// REVISION TARGET DISPATCHER (ส่งให้คนตัดต่อแก้ vs ส่งให้คนเขียนบทแก้)
+// ============================================================================
+function rejectCardToTarget(targetRole) {
+  syncModalFieldsToCardObject();
+  const card = cards.find(c => c.id === activeCardId);
+  if (!card) return;
+
+  const feedbackInput = document.getElementById('modal-feedback');
+  let feedback = (feedbackInput ? feedbackInput.value : card.feedback || '').trim();
+
+  if (!feedback) {
+    const promptMsg = targetRole === 'editor'
+      ? 'ระบุจุดที่ต้องการให้คนตัดต่อแก้ (เช่น ซับไตเติลตกหล่น, ดนตรีดังเกินไป, สีภาพมืด):'
+      : 'ระบุจุดที่ต้องการให้คนเขียนบทแก้ (เช่น ข้อมูลไม่ครบ, แก้คำพูด, ปรับโครงสร้างบทใหม่):';
+    const inputMsg = prompt(promptMsg, '');
+    if (inputMsg === null) return;
+    feedback = inputMsg.trim() || (targetRole === 'editor' ? 'มีจุดตัดต่อที่ต้องแก้ไขเพิ่มเติม' : 'มีจุดในบทที่ต้องแก้ไขเพิ่มเติม');
+    if (feedbackInput) feedbackInput.value = feedback;
+  }
+
+  card.feedback = feedback;
+  card.revisionTarget = targetRole;
+
+  if (targetRole === 'editor') {
+    const editorMember = teamMembers.find(m => m.role === 'editor') || { name: 'ทีมตัดต่อ (Editor)' };
+    card.assignee = editorMember.name;
+    card.status = 'script_done';
+    recordCardChanges(card, `สั่งแก้ตัดต่อ: "${feedback}" (ส่งมอบหมายให้ ${card.assignee})`);
+    showToast(`🎬 ส่งกลับให้คนตัดต่อแก้แล้ว (${card.assignee})`);
+  } else {
+    const writerMember = teamMembers.find(m => m.role === 'writer') || { name: 'น้องมายด์ (คนเขียนบท)' };
+    const currentIsWriter = teamMembers.some(m => m.name === card.assignee && m.role === 'writer');
+    if (!currentIsWriter) {
+      card.assignee = writerMember.name;
+    }
+    card.status = 'writing';
+    recordCardChanges(card, `สั่งแก้บท: "${feedback}" (ส่งมอบหมายให้ ${card.assignee})`);
+    showToast(`✍️ ส่งกลับให้คนเขียนบทแก้แล้ว (${card.assignee})`);
+  }
+
+  saveState();
+  renderCurrentView();
+  closeCardModal();
+}
+
+function rejectCardWithFeedback() {
+  rejectCardToTarget('writer');
 }
 
 function updateCardModalStageVisibility(card) {
@@ -2850,15 +3010,18 @@ function renderWorkflowActionButtons(card) {
     if (check.allowed) {
       container.innerHTML += `
         <button type="button" onclick="saveAndMoveCard('script_done')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          ตรวจผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
+          ✓ ตรวจผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
         </button>
-        <button type="button" onclick="rejectCardWithFeedback()" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-          มีจุดต้องปรับแก้ (ส่งกลับไปเขียนบท)
+        <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> สั่งแก้บท (ส่งกลับคนเขียนบท)
         </button>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
+        <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition mt-1.5">
+          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> สั่งแก้บท (ส่งกลับคนเขียนบท)
+        </button>
       `;
     }
   } else if (card.status === 'script_done') {
@@ -2866,18 +3029,37 @@ function renderWorkflowActionButtons(card) {
       <button type="button" onclick="saveAndMoveCard('edit_review')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
         ตัดต่อเสร็จแล้ว → ส่งตรวจคลิป
       </button>
+      <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+        <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ต้องแก้บทใหม่ (ส่งกลับคนเขียนบท)
+      </button>
     `;
   } else if (card.status === 'edit_review') {
     const check = validateMoveCard(card, 'waiting_post');
     if (check.allowed) {
       container.innerHTML += `
         <button type="button" onclick="saveAndMoveCard('waiting_post')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          คลิปผ่านแล้ว → ย้ายไป "6. รอลง"
+          ✓ คลิปผ่านแล้ว → ย้ายไป "6. รอลง"
         </button>
+        <div class="grid grid-cols-2 gap-1.5 pt-1">
+          <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition" title="ส่งให้คนตัดต่อปรับแก้คลิป">
+            <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
+          </button>
+          <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition" title="ส่งให้คนเขียนบทแก้เนื้อหา">
+            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
+          </button>
+        </div>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
+        <div class="grid grid-cols-2 gap-1.5 pt-1">
+          <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+            <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
+          </button>
+          <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
+          </button>
+        </div>
       `;
     }
   } else if (card.status === 'waiting_post') {
@@ -2885,6 +3067,14 @@ function renderWorkflowActionButtons(card) {
       <button type="button" onclick="saveAndMoveCard('posted')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
         โพสต์ขึ้นแล้ว → ย้ายไปเช็คช่องทาง
       </button>
+      <div class="grid grid-cols-2 gap-1.5 pt-1">
+        <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+          <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
+        </button>
+        <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
+          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
+        </button>
+      </div>
     `;
   } else if (card.status === 'posted') {
     const targets = tempChannels.filter(c => c.target);
@@ -2947,6 +3137,8 @@ function syncModalFieldsToCardObject() {
   card.videoDuration = document.getElementById('modal-video-duration')?.value.trim() || '';
   card.videoRatio = document.getElementById('modal-video-ratio')?.value || '9:16';
   card.videoNotes = document.getElementById('modal-video-notes')?.value.trim() || '';
+  card.primaryChannel = card.primaryChannel || 'ch1';
+  card.revisionTarget = card.revisionTarget || null;
 }
 
 function saveCardModal(closeAfter = true) {
@@ -2972,20 +3164,6 @@ function saveAndMoveCard(targetStatus) {
   if (updated && updated.status === targetStatus) {
     closeCardModal();
   }
-}
-
-function rejectCardWithFeedback() {
-  syncModalFieldsToCardObject();
-  const card = cards.find(c => c.id === activeCardId);
-  if (!card) return;
-
-  if (!card.feedback) card.feedback = 'มีจุดที่ต้องปรับแก้เพิ่มเติม รบกวนตรวจตามคอมเมนต์ครับ';
-  card.status = 'writing';
-  recordCardChanges(card, `ส่งกลับไปปรับแก้บท: "${card.feedback}"`);
-  saveState();
-  renderCurrentView();
-  closeCardModal();
-  showToast('ส่งกลับไปขั้นตอน "2. เขียนบท" แล้ว');
 }
 
 function approveCardFromReview() {
