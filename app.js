@@ -604,14 +604,6 @@ function submitIdPassLogin() {
   passInput?.select();
 }
 
-function quickFillLogin(u, p) {
-  const userInput = document.getElementById('login-username-input');
-  const passInput = document.getElementById('login-password-input');
-  if (userInput) userInput.value = u;
-  if (passInput) passInput.value = p;
-  submitIdPassLogin();
-}
-
 // Admin Console: Team Member Management & Admin Settings
 function switchAdminModalTab(tabKey) {
   const teamView = document.getElementById('admin-view-team');
