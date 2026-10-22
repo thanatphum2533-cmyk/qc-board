@@ -376,6 +376,8 @@ function getInitialDemoCards() {
       newsThumb: '',
       draftDeadline: offsetDateTimeLocal(-48),
       publishTime: offsetDateTimeLocal(-3),
+      primaryChannel: 'ch2',
+      revisionTarget: null,
       script: 'พฤติกรรมนั่งไขว่ห้าง ยกของหนักผิดท่า และการดื่มน้ำอัดลมเป็นประจำ ส่งผลเสียต่อสุขภาพกระดูกในระยะยาว มาปรับเปลี่ยนเพื่อสุขภาพที่ดีกันนะคะ',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: true })),
       channels: [
@@ -1793,8 +1795,8 @@ function renderBoard() {
         ${col.subtitle ? `<p class="text-[10px] text-zinc-500 px-1 mt-0.5">${escapeHtml(col.subtitle)}</p>` : ''}
       </div>
 
-      <div class="trello-list-cards p-2 space-y-2 overflow-y-auto flex-1" id="col-body-${col.id}"></div>
-      <div class="p-2 pt-1 border-t border-zinc-200/50" id="col-footer-${col.id}"></div>
+      <div class="trello-list-cards p-2 space-y-2.5 overflow-y-auto flex-1 min-h-0" id="col-body-${col.id}"></div>
+      <div class="p-2 pt-1 border-t border-zinc-200/50 shrink-0" id="col-footer-${col.id}"></div>
     `;
 
     const bodyEl = listEl.querySelector(`#col-body-${col.id}`);
@@ -1809,7 +1811,16 @@ function renderBoard() {
           <textarea id="quick-card-title-${col.id}" rows="2" placeholder="พิมพ์หัวข้อ หรือวางลิงก์ข่าว (https://...)"
             onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();submitQuickAddCard('${col.id}');}"
             class="w-full bg-zinc-50 focus:bg-white rounded p-1.5 text-xs text-zinc-900 border border-zinc-200 focus:outline-none focus:border-zinc-400 select-text"></textarea>
-          <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-zinc-500 font-medium">ลงช่อง:</span>
+            <select id="quick-card-channel-${col.id}" class="text-[11px] bg-zinc-50 border border-zinc-200 rounded px-1.5 py-0.5 text-zinc-700 focus:outline-none focus:border-zinc-400 flex-1 font-medium">
+              <option value="ch1" selected>🔵 ช่อง 1 · Facebook</option>
+              <option value="ch2">⚫ ช่อง 2 · TikTok</option>
+              <option value="ch3">🟣 ช่อง 3 · IG Reels</option>
+              <option value="ch4">🔴 ช่อง 4 · YouTube</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between pt-0.5">
             <div class="flex items-center gap-1">
               <button onclick="submitQuickAddCard('${col.id}')" class="bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-medium px-2.5 py-1 rounded transition">
                 เพิ่มการ์ด
@@ -1866,7 +1877,10 @@ function createTrelloCardElement(card) {
     ? 'border-rose-400 ring-1 ring-rose-400'
     : '';
 
-  cardEl.className = `trello-card overflow-hidden cursor-pointer ${urgentRing}`;
+  const primCh = card.primaryChannel || ((card.channels || []).find(c => c.target)?.id) || 'ch1';
+  const chThemeClass = `card-theme-${primCh}`;
+
+  cardEl.className = `trello-card overflow-hidden cursor-pointer ${chThemeClass} ${urgentRing}`;
   cardEl.draggable = true;
 
   cardEl.addEventListener('dragstart', () => {
@@ -1939,7 +1953,6 @@ function createTrelloCardElement(card) {
   }
 
   // Primary Channel & Revision Badge
-  const primCh = card.primaryChannel || ((card.channels || []).find(c => c.target)?.id) || 'ch1';
   const chBadge = getChannelBadge(primCh);
 
   let revisionBadgeHtml = '';
@@ -2038,6 +2051,9 @@ async function submitQuickAddCard(colId) {
   const rawVal = (input?.value || '').trim();
   if (!rawVal) return;
 
+  const chSelect = document.getElementById(`quick-card-channel-${colId}`);
+  const chosenChannel = chSelect?.value || 'ch1';
+
   const isUrl = /^https?:\/\/\S+$/i.test(rawVal) || /^www\.\S+\.\S+/i.test(rawVal);
   const normalizedUrl = isUrl ? (/^https?:\/\//i.test(rawVal) ? rawVal : `https://${rawVal}`) : '';
   const defaultAssignee = activeMember ? activeMember.name : 'น้องมายด์ (คนเขียนบท)';
@@ -2063,10 +2079,16 @@ async function submitQuickAddCard(colId) {
     videoDuration: '',
     videoRatio: '9:16',
     videoNotes: '',
-    primaryChannel: 'ch1',
+    primaryChannel: chosenChannel,
     revisionTarget: null,
     checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
-    channels: DEFAULT_CHANNELS.map((c, idx) => ({ id: c.id, name: c.name, short: c.short, target: idx < 3, posted: false })),
+    channels: DEFAULT_CHANNELS.map(c => ({
+      id: c.id,
+      name: c.name,
+      short: c.short,
+      target: c.id === chosenChannel,
+      posted: false
+    })),
     scheduleLink: '',
     scheduleImage: '',
     feedback: '',

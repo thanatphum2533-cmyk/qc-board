@@ -76,24 +76,115 @@
 
 /* Kanban Column — Clean Architectural Tray */
 .trello-list {
-  width: 288px;
-  min-width: 288px;
-  max-height: calc(100vh - 116px);
-  background-color: rgba(235, 236, 239, 0.78);
+  width: 296px;
+  min-width: 296px;
+  height: calc(100vh - 128px);
+  max-height: calc(100vh - 128px);
+  background-color: rgba(235, 236, 239, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(24, 24, 27, 0.07);
-  border-radius: 10px;
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trello-list-cards {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 8px;
+  scroll-behavior: smooth;
+}
+
+.trello-list-cards::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trello-list-cards::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+
+.trello-list-cards::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.32);
+  border-radius: 8px;
+}
+
+.trello-list-cards::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 24, 27, 0.55);
 }
 
 /* Kanban Card — Tactile Paper Surface */
 .trello-card {
   background-color: #ffffff;
-  border-radius: 9px;
+  border-radius: 10px;
   border: 1px solid #e4e4e7;
   box-shadow: 0 1px 2px rgba(24, 24, 27, 0.04);
   transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.14s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.14s ease;
+}
+
+/* ============================================================================
+   CARD THEMES BY DESTINATION CHANNEL (สีการ์ดแยกตามช่อง 1, 2, 3, 4)
+   ============================================================================ */
+/* ช่อง 1: Facebook — ฟ้า / น้ำเงิน */
+.card-theme-ch1 {
+  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #bfdbfe !important;
+  border-left-width: 5px !important;
+  border-left-color: #2563eb !important; /* Facebook Blue */
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch1:hover {
+  border-color: #60a5fa !important;
+  border-left-color: #1d4ed8 !important;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.18), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่อง 2: TikTok — สีดำ / Slate คมชัด */
+.card-theme-ch2 {
+  background: linear-gradient(180deg, #f4f4f5 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #d4d4d8 !important;
+  border-left-width: 5px !important;
+  border-left-color: #18181b !important; /* TikTok Dark */
+  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch2:hover {
+  border-color: #a1a1aa !important;
+  border-left-color: #09090b !important;
+  box-shadow: 0 6px 16px -2px rgba(24, 24, 27, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่อง 3: IG / Reels — ชมพู / ม่วง Gradient */
+.card-theme-ch3 {
+  background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #fbcfe8 !important;
+  border-left-width: 5px !important;
+  border-left-color: #db2777 !important; /* Instagram Pink/Magenta */
+  box-shadow: 0 1px 3px rgba(219, 39, 119, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch3:hover {
+  border-color: #f472b6 !important;
+  border-left-color: #be185d !important;
+  box-shadow: 0 6px 16px -2px rgba(219, 39, 119, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ช่อง 4: YouTube — แดงสดใส */
+.card-theme-ch4 {
+  background: linear-gradient(180deg, #fef2f2 0%, #ffffff 48px, #ffffff 100%) !important;
+  border-color: #fecaca !important;
+  border-left-width: 5px !important;
+  border-left-color: #dc2626 !important; /* YouTube Red */
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.card-theme-ch4:hover {
+  border-color: #f87171 !important;
+  border-left-color: #b91c1c !important;
+  box-shadow: 0 6px 16px -2px rgba(220, 38, 38, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
 .trello-card:hover {
