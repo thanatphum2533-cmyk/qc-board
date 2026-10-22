@@ -36,12 +36,16 @@ const DEFAULT_COLUMNS = [
   { id: 'posted', title: '7. ลงแล้ว (เช็คช่องทาง)', subtitle: 'เช็คครบ ช่อง 1, 2, 3...', isCore: true, dot: 'bg-emerald-500' }
 ];
 
+const STORAGE_KEY_CHANNELS = 'qc_board_channels_v4';
+
 const DEFAULT_CHANNELS = [
-  { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'FB' },
-  { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'TT' },
-  { id: 'ch3', name: 'ช่อง 3 · IG / Reels', short: 'IG' },
-  { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'YT' }
+  { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', theme: 'ch1', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' },
+  { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'ช่อง 2 · TikTok', theme: 'ch2', dot: 'bg-zinc-900', badgeBg: 'bg-zinc-900 text-white border-zinc-950' },
+  { id: 'ch3', name: 'ช่อง 3 · IG Reels', short: 'ช่อง 3 · IG', theme: 'ch3', dot: 'bg-gradient-to-r from-purple-500 to-pink-500', badgeBg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' },
+  { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'ช่อง 4 · YouTube', theme: 'ch4', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' }
 ];
+
+let boardChannels = [...DEFAULT_CHANNELS];
 
 const DEFAULT_CHECKLIST = [
   { id: 'chk1', text: 'อ่านทวนบทและสคริปต์ออกเสียง 1 รอบ (ไม่มีคำผิด/คำตกหล่น)', done: false },
@@ -610,29 +614,33 @@ function submitIdPassLogin() {
 function switchAdminModalTab(tabKey) {
   const teamView = document.getElementById('admin-view-team');
   const secView = document.getElementById('admin-view-security');
+  const chanView = document.getElementById('admin-view-channels');
+
   const teamBtn = document.getElementById('admin-tab-team-btn');
   const secBtn = document.getElementById('admin-tab-security-btn');
+  const chanBtn = document.getElementById('admin-tab-channels-btn');
+
+  const inactiveBtnClass = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70';
+  const activeBtnClass = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-zinc-900 text-zinc-900 flex items-center gap-1.5 transition bg-white shadow-sm';
+
+  if (teamView) teamView.classList.add('hidden');
+  if (secView) secView.classList.add('hidden');
+  if (chanView) chanView.classList.add('hidden');
+
+  if (teamBtn) teamBtn.className = inactiveBtnClass;
+  if (secBtn) secBtn.className = inactiveBtnClass;
+  if (chanBtn) chanBtn.className = inactiveBtnClass;
 
   if (tabKey === 'security') {
-    if (teamView) teamView.classList.add('hidden');
     if (secView) secView.classList.remove('hidden');
-
-    if (teamBtn) {
-      teamBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70';
-    }
-    if (secBtn) {
-      secBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-zinc-900 text-zinc-900 flex items-center gap-1.5 transition bg-white shadow-sm';
-    }
+    if (secBtn) secBtn.className = activeBtnClass;
+  } else if (tabKey === 'channels') {
+    if (chanView) chanView.classList.remove('hidden');
+    if (chanBtn) chanBtn.className = activeBtnClass;
+    renderAdminChannelsList();
   } else {
-    if (secView) secView.classList.add('hidden');
     if (teamView) teamView.classList.remove('hidden');
-
-    if (teamBtn) {
-      teamBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-zinc-900 text-zinc-900 flex items-center gap-1.5 transition bg-white shadow-sm';
-    }
-    if (secBtn) {
-      secBtn.className = 'px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70';
-    }
+    if (teamBtn) teamBtn.className = activeBtnClass;
   }
   lucide.createIcons();
 }
@@ -1739,8 +1747,10 @@ function renderBoard() {
     const colCards = cards.filter(c => {
       if (c.status !== col.id) return false;
       if (filterPlatform !== 'ALL') {
-        const hasCh = (c.channels || []).some(ch => ch.target && (ch.name.includes(filterPlatform) || ch.short.includes(filterPlatform)));
-        if (!hasCh) return false;
+        const matches = (c.primaryChannel === filterPlatform) ||
+          ((c.channels || []).some(ch => ch.target && (ch.name.includes(filterPlatform) || ch.short.includes(filterPlatform)))) ||
+          (c.customChannel && c.customChannel.toLowerCase().includes(filterPlatform.toLowerCase()));
+        if (!matches) return false;
       }
       if (searchQuery) {
         const hay = `${c.title} ${c.assignee} ${c.script} ${c.newsTitle || ''} ${c.newsDomain || ''}`.toLowerCase();
@@ -1814,10 +1824,7 @@ function renderBoard() {
           <div class="flex items-center gap-1.5">
             <span class="text-[10px] text-zinc-500 font-medium">ลงช่อง:</span>
             <select id="quick-card-channel-${col.id}" class="text-[11px] bg-zinc-50 border border-zinc-200 rounded px-1.5 py-0.5 text-zinc-700 focus:outline-none focus:border-zinc-400 flex-1 font-medium">
-              <option value="ch1" selected>🔵 ช่อง 1 · Facebook</option>
-              <option value="ch2">⚫ ช่อง 2 · TikTok</option>
-              <option value="ch3">🟣 ช่อง 3 · IG Reels</option>
-              <option value="ch4">🔴 ช่อง 4 · YouTube</option>
+              ${(boardChannels || DEFAULT_CHANNELS).map(ch => `<option value="${ch.id}">${escapeHtml(ch.name)}</option>`).join('')}
             </select>
           </div>
           <div class="flex items-center justify-between pt-0.5">
@@ -1953,7 +1960,7 @@ function createTrelloCardElement(card) {
   }
 
   // Primary Channel & Revision Badge
-  const chBadge = getChannelBadge(primCh);
+  const chBadge = getChannelBadge(primCh, card.customChannel);
 
   let revisionBadgeHtml = '';
   if (card.revisionTarget === 'editor') {
@@ -2400,15 +2407,18 @@ function openCardModal(cardId) {
   const wordLinkEl = document.getElementById('modal-word-link');
   if (wordLinkEl) wordLinkEl.value = card.wordLink || '';
 
+  renderChannelQuickPills();
   renderModalNewsPreview();
-  renderModalChannels();
   renderModalChecklist();
   renderProofImagePreview();
   renderWordFilePreview();
 
-  const primCh = card.primaryChannel || ((card.channels || []).find(c => c.target)?.id) || 'ch1';
+  const primCh = card.primaryChannel || 'ch1';
   card.primaryChannel = primCh;
   renderPrimaryChannelUI(primCh);
+
+  const customInp = document.getElementById('modal-custom-channel');
+  if (customInp) customInp.value = card.customChannel || '';
 
   const revBadge = document.getElementById('revision-status-badge');
   if (revBadge) {
@@ -2822,19 +2832,75 @@ function copyScriptText() {
 }
 
 // ============================================================================
-// PRIMARY DESTINATION CHANNEL HELPERS ("บทนี้ลงช่องไหน")
+// DYNAMIC & EDITABLE CHANNELS SYSTEM ("จะลงช่องไหนให้ แก้ไขเองได้")
 // ============================================================================
-function getChannelBadge(chId) {
-  if (chId === 'ch1') {
-    return { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', bg: 'bg-blue-600 text-white border-blue-700' };
-  } else if (chId === 'ch2') {
-    return { id: 'ch2', name: 'ช่อง 2 · TikTok', short: 'ช่อง 2 · TikTok', bg: 'bg-zinc-900 text-white border-zinc-950' };
-  } else if (chId === 'ch3') {
-    return { id: 'ch3', name: 'ช่อง 3 · IG Reels', short: 'ช่อง 3 · IG', bg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' };
-  } else if (chId === 'ch4') {
-    return { id: 'ch4', name: 'ช่อง 4 · YouTube', short: 'ช่อง 4 · YouTube', bg: 'bg-red-600 text-white border-red-700' };
+function loadChannels() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_CHANNELS);
+    if (saved) {
+      boardChannels = JSON.parse(saved);
+    } else {
+      boardChannels = [...DEFAULT_CHANNELS];
+    }
+    if (!Array.isArray(boardChannels) || boardChannels.length === 0) {
+      boardChannels = [...DEFAULT_CHANNELS];
+    }
+  } catch (e) {
+    boardChannels = [...DEFAULT_CHANNELS];
   }
-  return { id: 'ch1', name: 'ช่อง 1 · Facebook', short: 'ช่อง 1 · FB', bg: 'bg-blue-600 text-white border-blue-700' };
+}
+
+function saveChannels() {
+  localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(boardChannels));
+  populatePlatformFilter();
+  renderChannelQuickPills();
+  renderAdminChannelsList();
+  renderBoard();
+  saveState();
+}
+
+function getChannelBadge(chId, customChannelName) {
+  const found = (boardChannels || DEFAULT_CHANNELS).find(c => c.id === chId);
+  if (found) {
+    const displayName = customChannelName || found.name;
+    return {
+      id: found.id,
+      name: displayName,
+      short: customChannelName || found.short || found.name,
+      bg: found.badgeBg || 'bg-zinc-900 text-white',
+      dot: found.dot || 'bg-zinc-700',
+      theme: found.theme || chId
+    };
+  }
+  return {
+    id: chId || 'ch1',
+    name: customChannelName || 'ช่อง 1 · Facebook',
+    short: customChannelName || 'ช่อง 1',
+    bg: 'bg-blue-600 text-white border-blue-700',
+    dot: 'bg-blue-600',
+    theme: chId || 'ch1'
+  };
+}
+
+function renderChannelQuickPills() {
+  const container = document.getElementById('channel-quick-pills');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const activePrim = (activeCardId && cards.find(c => c.id === activeCardId)?.primaryChannel) || 'ch1';
+
+  (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
+    const isSelected = ch.id === activePrim;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = `btn-ch-${ch.id}`;
+    btn.onclick = () => setPrimaryChannel(ch.id);
+    btn.className = isSelected
+      ? 'py-2 px-2.5 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition ring-2 ring-zinc-900 bg-white shadow-sm text-zinc-900 border-zinc-400'
+      : 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-70 bg-zinc-50 hover:opacity-100 text-zinc-700 border-zinc-200';
+    btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full ${ch.dot || 'bg-blue-600'} shrink-0 shadow-sm"></span> <span class="truncate">${escapeHtml(ch.name)}</span>`;
+    container.appendChild(btn);
+  });
 }
 
 function setPrimaryChannel(chId) {
@@ -2843,39 +2909,160 @@ function setPrimaryChannel(chId) {
   if (!card) return;
 
   card.primaryChannel = chId;
+  const chObj = (boardChannels || DEFAULT_CHANNELS).find(c => c.id === chId);
 
-  // Ensure this channel is marked target in tempChannels
-  if (Array.isArray(tempChannels)) {
-    const ch = tempChannels.find(c => c.id === chId);
-    if (ch) ch.target = true;
+  // If user hasn't typed a custom channel, sync with channel name
+  if (chObj && (!card.customChannel || boardChannels.some(b => b.name === card.customChannel))) {
+    card.customChannel = chObj.name;
+    const customInp = document.getElementById('modal-custom-channel');
+    if (customInp) customInp.value = chObj.name;
   }
 
   renderPrimaryChannelUI(chId);
-  renderModalChannels();
   syncModalFieldsToCardObject();
+  saveState();
+  renderBoard();
 
-  const b = getChannelBadge(chId);
-  showToast(`📺 กำหนดช่องทางหลัก: ${b.name}`);
+  const b = getChannelBadge(chId, card.customChannel);
+  showToast(`📺 กำหนดช่องทาง: ${b.name}`);
+}
+
+function updateCustomChannelFromInput(val) {
+  if (!activeCardId) return;
+  const card = cards.find(c => c.id === activeCardId);
+  if (!card) return;
+
+  card.customChannel = val.trim();
+  const indicator = document.getElementById('primary-channel-indicator');
+  if (indicator) {
+    indicator.textContent = card.customChannel || (getChannelBadge(card.primaryChannel).name);
+  }
+  syncModalFieldsToCardObject();
+  saveState();
+  renderBoard();
 }
 
 function renderPrimaryChannelUI(chId) {
-  const badge = getChannelBadge(chId);
+  const card = activeCardId ? cards.find(c => c.id === activeCardId) : null;
+  const primCh = chId || (card && card.primaryChannel) || 'ch1';
+  const badge = getChannelBadge(primCh, card?.customChannel);
   const indicator = document.getElementById('primary-channel-indicator');
   if (indicator) {
     indicator.textContent = badge.name;
     indicator.className = `text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm ${badge.bg}`;
   }
 
-  ['ch1', 'ch2', 'ch3', 'ch4'].forEach(id => {
-    const btn = document.getElementById(`btn-ch-${id}`);
+  (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
+    const btn = document.getElementById(`btn-ch-${ch.id}`);
     if (btn) {
-      if (id === chId) {
+      if (ch.id === primCh) {
         btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-bold flex items-center justify-center gap-1.5 transition ring-2 ring-zinc-900 bg-white shadow-sm text-zinc-900 border-zinc-400';
       } else {
-        btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-60 bg-zinc-50 hover:opacity-100 text-zinc-600 border-zinc-200';
+        btn.className = 'py-2 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition opacity-70 bg-zinc-50 hover:opacity-100 text-zinc-700 border-zinc-200';
       }
     }
   });
+
+  const customInp = document.getElementById('modal-custom-channel');
+  if (customInp && card) {
+    customInp.value = card.customChannel || '';
+  }
+}
+
+function openChannelManagerTab() {
+  openTeamModal('channels');
+}
+
+function renderAdminChannelsList() {
+  const container = document.getElementById('admin-channels-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  (boardChannels || DEFAULT_CHANNELS).forEach((ch, idx) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-3 p-3 rounded-lg border border-zinc-200 bg-white shadow-sm';
+    row.innerHTML = `
+      <div class="flex items-center gap-2.5 flex-1 min-w-0">
+        <span class="w-3.5 h-3.5 rounded-full ${ch.dot || 'bg-blue-600'} shrink-0 shadow-sm"></span>
+        <div class="flex-1 min-w-0">
+          <label class="block text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">${escapeHtml(ch.short || ch.id)}</label>
+          <input type="text" value="${escapeHtml(ch.name)}"
+            onchange="updateChannelName('${ch.id}', this.value)"
+            class="w-full bg-zinc-50 focus:bg-white border border-zinc-200 rounded px-2.5 py-1 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-zinc-400 select-text" />
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        ${boardChannels.length > 1 ? `
+          <button type="button" onclick="deleteChannel('${ch.id}')" class="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" title="ลบช่องนี้">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        ` : ''}
+      </div>
+    `;
+    container.appendChild(row);
+  });
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateChannelName(chId, newName) {
+  const val = (newName || '').trim();
+  if (!val) return;
+  const ch = boardChannels.find(c => c.id === chId);
+  if (ch) {
+    ch.name = val;
+    saveChannels();
+    showToast(`✅ อัปเดตชื่อช่องเป็น "${val}" เรียบร้อยแล้ว`);
+  }
+}
+
+function promptAddNewChannel() {
+  const name = prompt('กรุณาระบุชื่อช่องใหม่ (เช่น ช่อง 5 · Threads หรือ เพจสำรอง):');
+  if (!name || !name.trim()) return;
+  const cleanName = name.trim();
+  const nextNum = boardChannels.length + 1;
+  const newId = 'ch' + nextNum;
+  const colors = [
+    { theme: 'ch1', dot: 'bg-blue-600', badgeBg: 'bg-blue-600 text-white border-blue-700' },
+    { theme: 'ch2', dot: 'bg-zinc-900', badgeBg: 'bg-zinc-900 text-white border-zinc-950' },
+    { theme: 'ch3', dot: 'bg-gradient-to-r from-purple-500 to-pink-500', badgeBg: 'bg-gradient-to-r from-purple-600 to-pink-500 text-white border-purple-700' },
+    { theme: 'ch4', dot: 'bg-red-600', badgeBg: 'bg-red-600 text-white border-red-700' }
+  ];
+  const colorObj = colors[(nextNum - 1) % colors.length];
+
+  boardChannels.push({
+    id: newId,
+    name: cleanName,
+    short: `ช่อง ${nextNum}`,
+    theme: colorObj.theme,
+    dot: colorObj.dot,
+    badgeBg: colorObj.badgeBg
+  });
+  saveChannels();
+  showToast(`🎉 เพิ่มช่อง "${cleanName}" สำเร็จแล้ว`);
+}
+
+function deleteChannel(chId) {
+  if (boardChannels.length <= 1) {
+    alert('ต้องมีอย่างน้อย 1 ช่องในระบบ');
+    return;
+  }
+  const ch = boardChannels.find(c => c.id === chId);
+  if (!confirm(`ต้องการลบช่อง "${ch ? ch.name : chId}" ใช่หรือไม่?`)) return;
+  boardChannels = boardChannels.filter(c => c.id !== chId);
+  saveChannels();
+  showToast('ลบช่องเรียบร้อยแล้ว');
+}
+
+function populatePlatformFilter() {
+  const sel = document.getElementById('filter-platform');
+  if (!sel) return;
+  const currentVal = sel.value || 'ALL';
+  let html = '<option value="ALL">ทุกช่องทาง</option>';
+  (boardChannels || DEFAULT_CHANNELS).forEach(ch => {
+    html += `<option value="${escapeHtml(ch.id)}">${escapeHtml(ch.name)}</option>`;
+  });
+  sel.innerHTML = html;
+  sel.value = currentVal;
 }
 
 // ============================================================================
@@ -3032,27 +3219,18 @@ function renderWorkflowActionButtons(card) {
     if (check.allowed) {
       container.innerHTML += `
         <button type="button" onclick="saveAndMoveCard('script_done')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          ✓ ตรวจผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
-        </button>
-        <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> สั่งแก้บท (ส่งกลับคนเขียนบท)
+          ✓ ตรวจบทผ่าน → ย้ายเข้า "4. บทสมบูรณ์"
         </button>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
-        <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition mt-1.5">
-          <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> สั่งแก้บท (ส่งกลับคนเขียนบท)
-        </button>
       `;
     }
   } else if (card.status === 'script_done') {
     container.innerHTML += `
       <button type="button" onclick="saveAndMoveCard('edit_review')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
         ตัดต่อเสร็จแล้ว → ส่งตรวจคลิป
-      </button>
-      <button type="button" onclick="rejectCardToTarget('writer')" class="w-full py-1.5 px-3 rounded-md bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-        <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ต้องแก้บทใหม่ (ส่งกลับคนเขียนบท)
       </button>
     `;
   } else if (card.status === 'edit_review') {
@@ -3062,26 +3240,10 @@ function renderWorkflowActionButtons(card) {
         <button type="button" onclick="saveAndMoveCard('waiting_post')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
           ✓ คลิปผ่านแล้ว → ย้ายไป "6. รอลง"
         </button>
-        <div class="grid grid-cols-2 gap-1.5 pt-1">
-          <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition" title="ส่งให้คนตัดต่อปรับแก้คลิป">
-            <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
-          </button>
-          <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition" title="ส่งให้คนเขียนบทแก้เนื้อหา">
-            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
-          </button>
-        </div>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2 rounded border border-rose-200 bg-rose-50 text-[11px] text-rose-800">${check.reason}</div>
-        <div class="grid grid-cols-2 gap-1.5 pt-1">
-          <button type="button" onclick="rejectCardToTarget('editor')" class="py-1.5 px-2 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-            <i data-lucide="film" class="w-3.5 h-3.5 text-purple-600"></i> ส่งคนตัดต่อแก้
-          </button>
-          <button type="button" onclick="rejectCardToTarget('writer')" class="py-1.5 px-2 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-medium flex items-center justify-center gap-1 transition">
-            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-sky-600"></i> ส่งคนเขียนบทแก้
-          </button>
-        </div>
       `;
     }
   } else if (card.status === 'waiting_post') {
@@ -3139,6 +3301,7 @@ function syncModalFieldsToCardObject() {
   card.contentType = document.getElementById('modal-content-type').value;
   card.draftDeadline = newDraftDl;
   card.publishTime = newPubTime;
+  card.customChannel = (document.getElementById('modal-custom-channel')?.value || '').trim();
   card.ideaNotes = document.getElementById('modal-idea-notes')?.value || card.ideaNotes || '';
   card.script = newScript;
   card.scheduleLink = document.getElementById('modal-schedule-link').value.trim();
@@ -3433,6 +3596,7 @@ function loadState() {
   }
 
   loadTeamState();
+  loadChannels();
 
   const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
   if (savedTheme) setBoardTheme(savedTheme, false);
@@ -3441,6 +3605,7 @@ function loadState() {
   if (savedTitle && document.getElementById('board-title-input')) {
     document.getElementById('board-title-input').value = savedTitle;
   }
+  populatePlatformFilter();
 }
 
 function saveState() {
@@ -3450,6 +3615,7 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY_CARDS, JSON.stringify(cards));
   localStorage.setItem(STORAGE_KEY_DICT, JSON.stringify(typoDict));
   localStorage.setItem(STORAGE_KEY_TEAM, JSON.stringify(teamMembers));
+  localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(boardChannels));
   localStorage.setItem(STORAGE_KEY_ADMIN_CREDS, JSON.stringify(adminCredentials));
   updateStats();
 
@@ -3462,6 +3628,7 @@ function saveState() {
       cards,
       typoDict,
       teamMembers,
+      channels: boardChannels,
       adminCredentials,
       boardTitle: document.getElementById('board-title-input')?.value || '',
       boardTheme: localStorage.getItem(STORAGE_KEY_THEME) || 'trello-bg-blue'

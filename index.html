@@ -294,32 +294,27 @@
             </p>
           </div>
 
-          <!-- Primary Channel Selector ("บทนี้ลงช่องไหน") -->
+          <!-- Channel Selector & Custom Name ("บทนี้ลงช่องไหน - แก้ไขเองได้") -->
           <div class="rounded-lg border border-zinc-200 bg-zinc-50/80 p-3.5 space-y-2.5">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <i data-lucide="share-2" class="w-4 h-4 text-zinc-700"></i>
-                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-800">บทนี้ลงช่องไหน (ช่องทางเป้าหมายหลัก):</label>
+                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-800">บทนี้ลงช่องไหน:</label>
+                <span id="primary-channel-indicator" class="text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm"></span>
               </div>
-              <span id="primary-channel-indicator" class="text-xs font-semibold px-2.5 py-0.5 rounded shadow-sm"></span>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="channel-quick-pills">
-              <button type="button" onclick="setPrimaryChannel('ch1')" id="btn-ch-ch1" class="py-2 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> ช่อง 1 · Facebook
-              </button>
-              <button type="button" onclick="setPrimaryChannel('ch2')" id="btn-ch-ch2" class="py-2 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                <span class="w-2.5 h-2.5 rounded-full bg-zinc-900"></span> ช่อง 2 · TikTok
-              </button>
-              <button type="button" onclick="setPrimaryChannel('ch3')" id="btn-ch-ch3" class="py-2 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></span> ช่อง 3 · IG Reels
-              </button>
-              <button type="button" onclick="setPrimaryChannel('ch4')" id="btn-ch-ch4" class="py-2 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span> ช่อง 4 · YouTube
+              <button type="button" onclick="openChannelManagerTab()" class="text-xs text-zinc-600 hover:text-zinc-950 flex items-center gap-1 font-medium transition hover:underline">
+                <i data-lucide="settings" class="w-3.5 h-3.5 text-zinc-500"></i> แก้ไขชื่อช่อง 1, 2, 3...
               </button>
             </div>
-            <p class="text-[11px] text-zinc-400">
-              💡 เลือกว่าบทนี้ผลิตขึ้นเพื่อลงช่องใดเป็นหลัก เพื่อให้ทีมเขียนบทและทีมตัดต่อกำหนดขนาด สัดส่วน และโทนคลิปได้ถูกต้อง
-            </p>
+            <!-- Dynamic Channel Pills (Rendered by renderChannelQuickPills) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="channel-quick-pills"></div>
+            <!-- Custom Channel Direct Edit Input (ระบุ/แก้ไขชื่อช่องเฉพาะคลิปนี้ได้เอง) -->
+            <div class="flex items-center gap-2 pt-1 border-t border-zinc-200/60">
+              <span class="text-[11px] text-zinc-500 font-medium shrink-0">หรือระบุชื่อช่องเอง:</span>
+              <input type="text" id="modal-custom-channel" oninput="updateCustomChannelFromInput(this.value)"
+                placeholder="พิมพ์ระบุชื่อช่อง เช่น ช่อง 1 หมอชุดฟ้า, ช่อง 2 บัญชีสำรอง..."
+                class="flex-1 bg-white border border-zinc-200 rounded px-2.5 py-1 text-xs text-zinc-800 focus:outline-none focus:border-zinc-400 select-text" />
+            </div>
           </div>
 
           <!-- 1. Source News Reference & Thumbnail Extractor -->
@@ -755,11 +750,6 @@
             </div>
           </div>
 
-          <!-- Channels Checkboxes (ช่อง 1, 2, 3...) -->
-          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
-            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">ช่องทางเผยแพร่ (เช็คช่อง 1, 2, 3...)</h4>
-            <div id="modal-platforms" class="flex flex-col gap-1.5"></div>
-          </div>
 
           <!-- Manager Review / Revision Note -->
           <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
@@ -866,6 +856,11 @@
             class="px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70">
             <i data-lucide="shield" class="w-3.5 h-3.5"></i>
             <span>ความปลอดภัย & รหัสผ่าน</span>
+          </button>
+          <button id="admin-tab-channels-btn" type="button" onclick="switchAdminModalTab('channels')"
+            class="px-3.5 py-2 text-xs font-semibold rounded-t-md border-b-2 border-transparent text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition hover:bg-zinc-100/70">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+            <span>จัดการชื่อช่อง (ช่อง 1, 2, 3...)</span>
           </button>
         </div>
       </div>
@@ -978,6 +973,28 @@
               class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-4 py-2 rounded-md transition flex items-center gap-1.5 shadow-sm">
               <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> บันทึกข้อมูลความปลอดภัย
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Channels Management (แก้ไขชื่อช่อง 1, 2, 3... เพิ่มช่องใหม่ได้เอง) -->
+      <div id="admin-view-channels" class="p-6 overflow-y-auto space-y-4 flex-1 hidden">
+        <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+                <i data-lucide="share-2" class="w-3.5 h-3.5 text-zinc-600"></i>
+                ตั้งค่าและแก้ไขชื่อช่อง (Channel Settings)
+              </h3>
+              <p class="text-[11px] text-zinc-500">สามารถแก้ไขชื่อช่อง 1, 2, 3, 4 ให้เป็นชื่อเพจหรือช่องของทีมได้โดยตรง</p>
+            </div>
+            <button type="button" onclick="promptAddNewChannel()"
+              class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1 transition shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มช่องใหม่
+            </button>
+          </div>
+          <div id="admin-channels-list" class="space-y-2.5 pt-1">
+            <!-- Populated dynamically by renderAdminChannelsList() -->
           </div>
         </div>
       </div>
