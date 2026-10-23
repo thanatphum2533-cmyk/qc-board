@@ -1022,11 +1022,6 @@ async function fetchNewsThumbnailFromInput(forceToast = false) {
       paragraphs: meta.paragraphs || []
     };
     renderModalNewsPreview();
-
-    const scriptEl = document.getElementById('modal-script');
-    if (scriptEl && (!scriptEl.value || scriptEl.value.trim().length < 15)) {
-      generateScriptFromNews(currentScriptStyle || 'health_alert', false);
-    }
     syncModalFieldsToCardObject();
     saveState();
     renderCurrentView();

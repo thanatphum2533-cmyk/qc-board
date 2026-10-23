@@ -404,48 +404,8 @@
               </div>
             </div>
 
-            <!-- Writer Specific Tools: Health Angle Studio + Word Document Attachment (แสดงเฉพาะขั้นตอนเขียนบทและตรวจบท) -->
+            <!-- Writer Specific Tools: Word Document Attachment (แสดงเฉพาะขั้นตอนเขียนบทและตรวจบท) -->
             <div id="modal-writer-tools-section" class="space-y-3">
-              <!-- Unified Editorial Script Generator Bar -->
-              <div class="bg-zinc-50 border border-zinc-200 rounded-lg p-3 space-y-2.5">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                  <span class="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
-                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-400"></i>
-                    สร้างโครงบทสุขภาพจากข่าว:
-                  </span>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[11px] text-zinc-500">มุมสุขภาพ:</span>
-                    <select id="health-angle-select" onchange="syncHealthAngle(this.value)" class="hidden"></select>
-                    <select id="health-angle-select-inline" onchange="syncHealthAngle(this.value)" class="bg-white border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-400">
-                      <option value="general">การดูแลตัวเอง & ป้องกันโรคทั่วไป</option>
-                      <option value="food">โภชนาการ & การเลือกกินอาหาร</option>
-                      <option value="sleep_stress">การนอนหลับ & ความเครียดวัยทำงาน</option>
-                      <option value="immunity">เสริมภูมิคุ้มกัน & ผู้สูงอายุ</option>
-                      <option value="product">เชื่อมโยงตัวช่วย / ผลิตภัณฑ์ของเพจ</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- 5 Editorial Styles as Clean Tactile Tabs -->
-                <div class="flex flex-wrap gap-1.5">
-                  <button type="button" onclick="generateScriptFromNews('health_alert')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    1. เตือนภัย / อุทาหรณ์สุขภาพ
-                  </button>
-                  <button type="button" onclick="generateScriptFromNews('wellness_tips')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    2. เคล็ดลับดูแลตัวเอง (How-to)
-                  </button>
-                  <button type="button" onclick="generateScriptFromNews('myth_fact')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    3. ไขข้อข้องใจ (Myth vs Fact)
-                  </button>
-                  <button type="button" onclick="generateScriptFromNews('soft_sell')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    4. ขยี้ข่าว + โยงตัวช่วยสุขภาพ
-                  </button>
-                  <button type="button" onclick="generateScriptFromNews('fb_infographic')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-zinc-900 hover:text-white text-zinc-700 border border-zinc-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    5. แคปชั่นสรุปสาระ (โพสต์เพจ)
-                  </button>
-                </div>
-              </div>
-
               <!-- Word Document & Document Links Section (แนบไฟล์ Word / ลิงก์ Google Docs สำหรับคนเขียนบท) -->
               <div class="rounded-lg border border-blue-200/80 bg-blue-50/50 p-3 space-y-2.5">
                 <div class="flex items-center justify-between flex-wrap gap-2">
