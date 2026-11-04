@@ -2420,7 +2420,17 @@ function openCardModal(cardId) {
 
   document.getElementById('modal-status-badge').textContent = colObj.title;
   document.getElementById('modal-list-name-inline').textContent = colObj.title;
-  document.getElementById('modal-deadline-badge').textContent = draftState.label;
+
+  const deadlineBadgeEl = document.getElementById('modal-deadline-badge');
+  if (deadlineBadgeEl) {
+    if (card.status === 'idea_review') {
+      deadlineBadgeEl.textContent = 'ไอเดียรอพิจารณา';
+      deadlineBadgeEl.className = 'font-mono text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded';
+    } else {
+      deadlineBadgeEl.textContent = draftState.label;
+      deadlineBadgeEl.className = 'font-mono text-[11px] text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded';
+    }
+  }
 
   document.getElementById('modal-title').value = card.title || '';
   populateAssigneeDropdown();
@@ -3318,6 +3328,12 @@ function updateCardModalStageVisibility(card) {
   const scheduleSec = document.getElementById('modal-schedule-section');
   const revisionBox = document.getElementById('modal-revision-buttons-box');
 
+  const propsSec = document.getElementById('modal-properties-section');
+  const feedbackSec = document.getElementById('modal-feedback-section');
+  const historySec = document.getElementById('modal-history-section');
+  const utilitySec = document.getElementById('modal-utility-section');
+  const channelSec = document.getElementById('modal-channel-selection-section');
+
   const status = card ? card.status : 'idea_review';
 
   // Toggle revision reject buttons box: ONLY show in QC review stages IF user is QC/Manager!
@@ -3331,7 +3347,8 @@ function updateCardModalStageVisibility(card) {
   }
 
   // 1. Stage 1: "1. ไอเดีย (รอตรวจ)" (idea_review)
-  // Only show Idea Concept & News preview. Hide Script Editor, Typo Checker, QC Checklist, and Schedule.
+  // Super clean & uncluttered: ONLY show Idea Notes & News preview + Approve/Reject action buttons.
+  // HIDE: Dates/Deadlines, Assignee properties, Typo checks, Comments, Edit history, Utility buttons, and Channels!
   if (status === 'idea_review') {
     if (ideaSec) ideaSec.classList.remove('hidden');
     if (writerToolsSec) writerToolsSec.classList.add('hidden');
@@ -3339,10 +3356,24 @@ function updateCardModalStageVisibility(card) {
     if (editorSec) editorSec.classList.add('hidden');
     if (checklistSec) checklistSec.classList.add('hidden');
     if (scheduleSec) scheduleSec.classList.add('hidden');
+    if (propsSec) propsSec.classList.add('hidden');
+    if (feedbackSec) feedbackSec.classList.add('hidden');
+    if (historySec) historySec.classList.add('hidden');
+    if (utilitySec) utilitySec.classList.add('hidden');
+    if (channelSec) channelSec.classList.add('hidden');
+    return;
   }
+
+  // Restore common panels for all other workflow stages
+  if (propsSec) propsSec.classList.remove('hidden');
+  if (feedbackSec) feedbackSec.classList.remove('hidden');
+  if (historySec) historySec.classList.remove('hidden');
+  if (utilitySec) utilitySec.classList.remove('hidden');
+  if (channelSec) channelSec.classList.remove('hidden');
+
   // 2. Stage 2: "2. เขียนบท" (writing)
   // Show full Script Generator, Word Attachment & Editor. Hide Video deliverable, QC Checklist, Schedule.
-  else if (status === 'writing') {
+  if (status === 'writing') {
     if (ideaSec) ideaSec.classList.add('hidden');
     if (writerToolsSec) writerToolsSec.classList.remove('hidden');
     if (scriptSec) scriptSec.classList.remove('hidden');
@@ -3414,23 +3445,34 @@ function renderWorkflowActionButtons(card) {
   if (card.status === 'idea_review') {
     if (isManager) {
       container.innerHTML += `
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="saveAndMoveCard('writing')" class="py-2.5 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-            <i data-lucide="check" class="w-4 h-4"></i> ✓ อนุมัติ (ไปเขียนบท)
-          </button>
-          <button type="button" onclick="rejectIdeaCard()" class="py-2.5 px-3 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-            <i data-lucide="x" class="w-4 h-4"></i> ✕ ไม่อนุมัติ
+        <div class="space-y-3">
+          <div class="text-[11px] font-semibold text-zinc-600">พิจารณาไอเดีย:</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="saveAndMoveCard('writing')" class="py-3 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+              <i data-lucide="check" class="w-4 h-4"></i> ✓ อนุมัติ (ไปเขียนบท)
+            </button>
+            <button type="button" onclick="rejectIdeaCard()" class="py-3 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+              <i data-lucide="x" class="w-4 h-4"></i> ✕ ไม่อนุมัติ
+            </button>
+          </div>
+          <button type="button" onclick="closeCardModal()" class="w-full py-2 px-3 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 text-xs font-medium transition">
+            ปิดหน้าต่าง
           </button>
         </div>
       `;
     } else {
       container.innerHTML += `
-        <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2">
-          <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0"></i>
-          <div class="leading-snug">
-            <div class="font-bold">รอหัวหน้า (QC / Manager) พิจารณาอนุมัติ / ไม่อนุมัติ</div>
-            <div class="text-[11px] text-amber-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติไอเดียเอง</div>
+        <div class="space-y-3">
+          <div class="p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5">
+            <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0"></i>
+            <div class="leading-snug">
+              <div class="font-bold">รอหัวหน้า (QC / Manager) พิจารณาอนุมัติ / ไม่อนุมัติ</div>
+              <div class="text-[11px] text-amber-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติไอเดียเอง</div>
+            </div>
           </div>
+          <button type="button" onclick="closeCardModal()" class="w-full py-2 px-3 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 text-xs font-medium transition">
+            ปิดหน้าต่าง
+          </button>
         </div>
       `;
     }

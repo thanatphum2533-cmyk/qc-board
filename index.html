@@ -297,7 +297,7 @@
           </div>
 
           <!-- Channel Selector & Custom Name ("บทนี้ลงช่องไหน - กำหนดโดยน้องมายด์ / เปลี่ยนช่องลงได้") -->
-          <div class="rounded-lg border border-zinc-200 bg-zinc-50/80 p-3.5 space-y-2.5">
+          <div id="modal-channel-selection-section" class="rounded-lg border border-zinc-200 bg-zinc-50/80 p-3.5 space-y-2.5">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <i data-lucide="share-2" class="w-4 h-4 text-zinc-700"></i>
@@ -697,7 +697,7 @@
           </div>
 
           <!-- Properties Group (Assignee Dropdown from Team Members, Content Type, Dates) -->
-          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-3">
+          <div id="modal-properties-section" class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-3">
             <div class="flex items-center justify-between">
               <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">ข้อมูลงาน & กำหนดเวลา</h4>
               <button type="button" onclick="openTeamModal()" class="text-[11px] text-zinc-500 hover:text-zinc-900 underline">จัดการรายชื่อ</button>
@@ -739,7 +739,7 @@
 
 
           <!-- Manager Review / Revision Note -->
-          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+          <div id="modal-feedback-section" class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
             <div class="flex items-center justify-between">
               <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-600 flex items-center gap-1.5">
                 <i data-lucide="message-square-more" class="w-3.5 h-3.5 text-zinc-400"></i>
@@ -775,7 +775,7 @@
           </div>
 
           <!-- Detailed Revision & Edit History Log (Who edited what & when + Restore) -->
-          <div class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
+          <div id="modal-history-section" class="bg-white p-3.5 rounded-lg border border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-2.5">
             <div class="flex items-center justify-between">
               <h4 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
                 <i data-lucide="history" class="w-3.5 h-3.5 text-zinc-400"></i> ประวัติการแก้ไขการ์ดนี้
@@ -786,7 +786,7 @@
           </div>
 
           <!-- Utility Actions & Save -->
-          <div class="space-y-2 pt-1">
+          <div id="modal-utility-section" class="space-y-2 pt-1">
             <button type="button" onclick="saveCardModal(true)" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
               <i data-lucide="save" class="w-3.5 h-3.5"></i> บันทึกข้อมูลการ์ด
             </button>
