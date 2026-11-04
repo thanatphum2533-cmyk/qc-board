@@ -211,7 +211,8 @@ function getInitialDemoCards() {
       primaryChannel: 'ch1',
       customChannel: 'TikTok ช่อง 1',
       revisionTarget: null,
-      script: 'แนวทางคอนเทนต์: สรุปประเด็นจากข่าว สอดแทรกสาระสุขภาพเรื่องการดูแลภูมิคุ้มกัน รอหัวหน้าอนุมัติประเด็น',
+      ideaNotes: 'แนวทางคอนเทนต์: สรุปประเด็นจากข่าว สอดแทรกสาระสุขภาพเรื่องการดูแลภูมิคุ้มกัน รอหัวหน้าอนุมัติประเด็น',
+      script: '',
       checklist: DEFAULT_CHECKLIST.map(c => ({ ...c, done: false })),
       channels: makeDemoChannels(['ch1', 'ch2']),
       scheduleLink: '',
@@ -1983,10 +1984,10 @@ function createTrelloCardElement(card) {
     }
   }).join('');
 
-  // Typo Badge - Focus primarily on writing & review stages
+  // Typo Badge - Strictly ONLY for writing and script_review stages (2. เขียนบท & 3. บทเสร็จ)
+  // NEVER show on idea_review (หน้าไอเดีย) or other stages
   let typoBadgeHtml = '';
-  const isScriptWritingStage = card.status === 'writing' || card.status === 'script_review';
-  if (isScriptWritingStage) {
+  if (card.status === 'writing' || card.status === 'script_review') {
     if (!card.script || card.script.trim().length === 0) {
       typoBadgeHtml = `<span class="text-[10px] text-zinc-500 bg-zinc-100 border border-zinc-200 px-1.5 py-0.2 rounded">ยังไม่พิมพ์บท</span>`;
     } else if (typos.length > 0) {
@@ -1994,8 +1995,6 @@ function createTrelloCardElement(card) {
     } else {
       typoBadgeHtml = `<span class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.2 rounded shadow-sm">✓ ตรวจคำผิดผ่าน (0)</span>`;
     }
-  } else if (typos.length > 0) {
-    typoBadgeHtml = `<span class="text-[10px] font-medium text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded">⚠️ ${typos.length} คำผิด</span>`;
   }
 
   // Primary Channel & Revision Badge
@@ -3759,6 +3758,13 @@ function loadState() {
   try {
     const savedCards = localStorage.getItem(STORAGE_KEY_CARDS);
     cards = savedCards ? JSON.parse(savedCards) : getInitialDemoCards();
+    // Ensure idea cards never have lingering script in idea stage
+    cards.forEach(c => {
+      if (c.status === 'idea_review' && c.script) {
+        if (!c.ideaNotes) c.ideaNotes = c.script;
+        c.script = '';
+      }
+    });
   } catch (e) {
     cards = getInitialDemoCards();
   }
@@ -3834,8 +3840,27 @@ async function syncFromServerState(isInitial = false) {
 
       if (remoteTs > localTs && !activeCardId) {
         lastSyncedUpdatedAt = remoteTs;
-        if (Array.isArray(remote.columns) && remote.columns.length > 0) columns = remote.columns;
-        if (Array.isArray(remote.cards)) cards = remote.cards;
+        if (Array.isArray(remote.columns) && remote.columns.length > 0) {
+          columns = remote.columns;
+          columns.forEach(col => {
+            if (col.id === 'writing') {
+              col.title = '2. เขียนบท & ตรวจคำผิด';
+              col.subtitle = 'เขียนบท & เช็คคำผิดให้เป็น 0 ก่อนส่งตรวจ';
+            } else if (col.id === 'script_review') {
+              col.title = '3. บทเสร็จ (รอตรวจ)';
+              col.subtitle = 'หัวหน้า QC ตรวจความถูกต้องของบท';
+            }
+          });
+        }
+        if (Array.isArray(remote.cards)) {
+          cards = remote.cards;
+          cards.forEach(c => {
+            if (c.status === 'idea_review' && c.script) {
+              if (!c.ideaNotes) c.ideaNotes = c.script;
+              c.script = '';
+            }
+          });
+        }
         if (Array.isArray(remote.typoDict) && remote.typoDict.length > 0) typoDict = remote.typoDict;
         if (Array.isArray(remote.teamMembers) && remote.teamMembers.length > 0) {
           teamMembers = remote.teamMembers;
