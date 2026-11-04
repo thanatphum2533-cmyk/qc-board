@@ -2031,6 +2031,48 @@ function createTrelloCardElement(card) {
   const assigneeName = card.assignee || 'ไม่ระบุ';
   const initial = assigneeName.replace('น้อง', '').replace('ทีม', '').trim().charAt(0) || 'U';
 
+  // If card is in 1. ไอเดีย (รอตรวจ) - Keep it super clean: only Approve / Reject, no bloated checklist/channels
+  if (card.status === 'idea_review') {
+    const isMgr = isQcManager(activeMember);
+    const actionAreaHtml = isMgr
+      ? `
+        <div class="pt-2 flex items-center gap-2 border-t border-zinc-100">
+          <button type="button" onclick="quickApproveIdea('${card.id}', event)" class="flex-1 py-1.5 px-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1 shadow-sm transition">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> อนุมัติ
+          </button>
+          <button type="button" onclick="quickRejectIdea('${card.id}', event)" class="flex-1 py-1.5 px-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center justify-center gap-1 shadow-sm transition">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i> ไม่อนุมัติ
+          </button>
+        </div>
+      `
+      : `
+        <div class="pt-2 flex items-center justify-between border-t border-zinc-100 text-xs text-amber-700 font-medium">
+          <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> รอหัวหน้าอนุมัติ</span>
+          <div class="w-5 h-5 rounded-full bg-zinc-900 text-white text-[10px] font-semibold flex items-center justify-center shrink-0" title="ผู้เสนอไอเดีย: ${escapeHtml(assigneeName)}">
+            ${escapeHtml(initial)}
+          </div>
+        </div>
+      `;
+
+    cardEl.innerHTML = `
+      ${newsCoverHtml}
+      <div class="p-3 space-y-2">
+        <div class="flex items-center justify-between gap-1">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded shadow-sm ${chBadge.bg}">
+            ${chBadge.short}
+          </span>
+          <span class="text-[10px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-2.5 h-2.5 text-amber-600"></i> ไอเดียใหม่
+          </span>
+        </div>
+        <div class="text-[13px] font-medium text-zinc-900 leading-snug tracking-tight">${escapeHtml(card.title)}</div>
+        ${card.feedback ? `<div class="text-[11px] bg-amber-50/80 border border-amber-200/80 text-amber-900 px-2 py-1 rounded">💬 ${escapeHtml(card.feedback)}</div>` : ''}
+        ${actionAreaHtml}
+      </div>
+    `;
+    return cardEl;
+  }
+
   cardEl.innerHTML = `
     ${newsCoverHtml}
     <div class="p-3 space-y-2">
@@ -3217,6 +3259,56 @@ function rejectCardWithFeedback() {
   rejectCardToTarget('writer');
 }
 
+function rejectIdeaCard() {
+  if (!isQcManager(activeMember)) {
+    showToast('⚠️ เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่มีสิทธิ์ไม่อนุมัติไอเดีย');
+    return;
+  }
+  const card = cards.find(c => c.id === activeCardId);
+  if (!card) return;
+
+  if (confirm(`ยืนยัน "ไม่อนุมัติ" ไอเดีย "${card.title}" ใช่หรือไม่?`)) {
+    cards = cards.filter(c => c.id !== activeCardId);
+    saveState();
+    closeCardModal();
+    renderBoard();
+    showToast(`❌ ไม่อนุมัติไอเดียเรียบร้อยแล้ว`);
+  }
+}
+
+function quickApproveIdea(cardId, event) {
+  if (event) event.stopPropagation();
+  if (!isQcManager(activeMember)) {
+    showToast('⚠️ เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่มีสิทธิ์อนุมัติ');
+    return;
+  }
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+
+  card.status = 'writing';
+  recordCardChanges(card, 'อนุมัติไอเดีย ย้ายเข้า "2. เขียนบท & ตรวจคำผิด"');
+  saveState();
+  renderBoard();
+  showToast(`✅ อนุมัติไอเดีย "${card.title}" → ไปเขียนบทเรียบร้อย`);
+}
+
+function quickRejectIdea(cardId, event) {
+  if (event) event.stopPropagation();
+  if (!isQcManager(activeMember)) {
+    showToast('⚠️ เฉพาะหัวหน้า (QC / Manager) เท่านั้นที่มีสิทธิ์ไม่อนุมัติ');
+    return;
+  }
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+
+  if (confirm(`ยืนยัน "ไม่อนุมัติ" ไอเดีย "${card.title}" ใช่หรือไม่?`)) {
+    cards = cards.filter(c => c.id !== cardId);
+    saveState();
+    renderBoard();
+    showToast(`❌ ไม่อนุมัติไอเดียเรียบร้อยแล้ว`);
+  }
+}
+
 function updateCardModalStageVisibility(card) {
   const ideaSec = document.getElementById('modal-idea-section');
   const writerToolsSec = document.getElementById('modal-writer-tools-section');
@@ -3322,16 +3414,21 @@ function renderWorkflowActionButtons(card) {
   if (card.status === 'idea_review') {
     if (isManager) {
       container.innerHTML += `
-        <button type="button" onclick="saveAndMoveCard('writing')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> อนุมัติไอเดีย → ไปเขียนบทต่อ
-        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="saveAndMoveCard('writing')" class="py-2.5 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+            <i data-lucide="check" class="w-4 h-4"></i> ✓ อนุมัติ (ไปเขียนบท)
+          </button>
+          <button type="button" onclick="rejectIdeaCard()" class="py-2.5 px-3 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+            <i data-lucide="x" class="w-4 h-4"></i> ✕ ไม่อนุมัติ
+          </button>
+        </div>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2">
           <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0"></i>
           <div class="leading-snug">
-            <div class="font-bold">รอหัวหน้า (QC / Manager) อนุมัติไอเดีย</div>
+            <div class="font-bold">รอหัวหน้า (QC / Manager) พิจารณาอนุมัติ / ไม่อนุมัติ</div>
             <div class="text-[11px] text-amber-700/90 mt-0.5">${escapeHtml(actorName)} ไม่มีสิทธิ์อนุมัติไอเดียเอง</div>
           </div>
         </div>
