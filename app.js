@@ -28,8 +28,8 @@ const DEFAULT_TEAM_MEMBERS = [
 
 const DEFAULT_COLUMNS = [
   { id: 'idea_review', title: '1. ไอเดีย (รอตรวจ)', subtitle: 'วางลิงก์ข่าว รอเคาะก่อนเขียนบท', isCore: true, dot: 'bg-zinc-400' },
-  { id: 'writing', title: '2. เขียนบท', subtitle: 'ไอเดียผ่านแล้ว ขึ้นโครงบทสุขภาพ', isCore: true, dot: 'bg-sky-500' },
-  { id: 'script_review', title: '3. บทเสร็จ (รอตรวจ)', subtitle: 'ตรวจบท & ตรวจคำผิด 3 ชั้น', isCore: true, dot: 'bg-amber-500' },
+  { id: 'writing', title: '2. เขียนบท & ตรวจคำผิด', subtitle: 'เขียนบท & เช็คคำผิดให้เป็น 0 ก่อนส่งตรวจ', isCore: true, dot: 'bg-sky-500' },
+  { id: 'script_review', title: '3. บทเสร็จ (รอตรวจ)', subtitle: 'หัวหน้า QC ตรวจความถูกต้องของบท', isCore: true, dot: 'bg-amber-500' },
   { id: 'script_done', title: '4. บทสมบูรณ์', subtitle: 'บทผ่าน 100% พร้อมถ่าย/ตัดต่อ', isCore: true, dot: 'bg-indigo-500' },
   { id: 'edit_review', title: '5. ตัดเสร็จ (รอตรวจ)', subtitle: 'ตรวจคลิป/ซับไตเติล/ปก', isCore: true, dot: 'bg-violet-500' },
   { id: 'waiting_post', title: '6. รอลง (ตั้งเวลาโพสต์)', subtitle: 'ตั้งเวลา Schedule ล่วงหน้า', isCore: true, dot: 'bg-teal-500' },
@@ -1315,8 +1315,8 @@ function runTypoCheck() {
 
   if (!text.trim()) {
     if (btnAutoFix) btnAutoFix.classList.add('hidden');
-    alertBox.className = 'rounded-md p-3 border border-zinc-200 bg-zinc-50 text-xs text-zinc-400';
-    alertBox.textContent = 'พิมพ์หรือวางบทคอนเทนต์ด้านบน ระบบจะตรวจสอบคำสะกดผิดภาษาไทยอัตโนมัติ';
+    alertBox.className = 'rounded-md p-3 border border-zinc-200 bg-zinc-50 text-xs text-zinc-500';
+    alertBox.innerHTML = '✍️ <b>ขั้นตอนเขียนบท & ตรวจคำผิด:</b> พิมพ์บทหรือแนบไฟล์ Word ด้านบน ระบบจะตรวจคำสะกดผิด คำซ้ำ และบริบทคำถามให้อัตโนมัติแบบเรียลไทม์';
   } else if (typos.length > 0) {
     if (btnAutoFix) btnAutoFix.classList.remove('hidden');
     alertBox.className = 'rounded-md p-3 border border-rose-200 bg-rose-50/70 text-xs text-rose-900 space-y-2';
@@ -1338,14 +1338,14 @@ function runTypoCheck() {
 
     alertBox.innerHTML = `
       <div class="font-semibold text-rose-800 flex items-center justify-between">
-        <span>พบจุดสะกดผิด ${typos.length} จุด (กรุณาแก้ไขก่อนส่งตรวจบท)</span>
+        <span class="flex items-center gap-1.5">⚠️ พบจุดสะกดผิด ${typos.length} จุด (คนเขียนบทต้องแก้ไขให้เป็น 0 ก่อนส่งตรวจบท)</span>
       </div>
       <div class="space-y-1.5">${itemsHtml}</div>
     `;
   } else {
     if (btnAutoFix) btnAutoFix.classList.add('hidden');
     alertBox.className = 'rounded-md p-2.5 border border-emerald-200 bg-emerald-50/70 text-xs text-emerald-800 flex items-center gap-2';
-    alertBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span><b>ตรวจคำผิดผ่าน 100%</b> ไม่พบคำสะกดผิดในคลัง</span>`;
+    alertBox.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0"></span> <span><b>✓ ผ่านตรวจคำผิด 100% (0 คำผิด)</b> ไม่พบคำสะกดผิดในบท — พร้อมส่งให้หัวหน้าตรวจบทแล้ว</span>`;
   }
 
   if (activeCardId) syncAndRefreshActions();
@@ -1983,14 +1983,19 @@ function createTrelloCardElement(card) {
     }
   }).join('');
 
-  // Typo Badge
+  // Typo Badge - Focus primarily on writing & review stages
   let typoBadgeHtml = '';
-  if (!card.script || card.script.trim().length === 0) {
-    typoBadgeHtml = `<span class="text-[10px] text-zinc-400">ดราฟต์ว่าง</span>`;
+  const isScriptWritingStage = card.status === 'writing' || card.status === 'script_review';
+  if (isScriptWritingStage) {
+    if (!card.script || card.script.trim().length === 0) {
+      typoBadgeHtml = `<span class="text-[10px] text-zinc-500 bg-zinc-100 border border-zinc-200 px-1.5 py-0.2 rounded">ยังไม่พิมพ์บท</span>`;
+    } else if (typos.length > 0) {
+      typoBadgeHtml = `<span class="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-300 px-1.5 py-0.2 rounded shadow-sm">⚠️ ${typos.length} คำผิด</span>`;
+    } else {
+      typoBadgeHtml = `<span class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.2 rounded shadow-sm">✓ ตรวจคำผิดผ่าน (0)</span>`;
+    }
   } else if (typos.length > 0) {
-    typoBadgeHtml = `<span class="text-[10px] font-medium text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded">${typos.length} คำผิด</span>`;
-  } else {
-    typoBadgeHtml = `<span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded">ผ่านตรวจคำผิด</span>`;
+    typoBadgeHtml = `<span class="text-[10px] font-medium text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded">⚠️ ${typos.length} คำผิด</span>`;
   }
 
   // Primary Channel & Revision Badge
@@ -3337,15 +3342,15 @@ function renderWorkflowActionButtons(card) {
     const check = validateMoveCard(card, 'script_review');
     if (check.allowed) {
       container.innerHTML += `
-        <button type="button" onclick="saveAndMoveCard('script_review')" class="w-full py-2 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-          <i data-lucide="send" class="w-3.5 h-3.5"></i> ส่งบทเสร็จแล้ว → รอตรวจ/ปรับแก้
+        <button type="button" onclick="saveAndMoveCard('script_review')" class="w-full py-2.5 px-3 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> ✓ ส่งบทเสร็จแล้ว (ตรวจคำผิดผ่าน 100%) → รอหัวหน้าตรวจ
         </button>
       `;
     } else {
       container.innerHTML += `
         <div class="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-[11px] text-rose-800 flex items-center gap-2">
-          <i data-lucide="lock" class="w-4 h-4 text-rose-500 shrink-0"></i>
-          <div>${check.reason}</div>
+          <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+          <div><b>ยังส่งตรวจไม่ได้:</b> ${check.reason} (ต้องตรวจคำผิดให้เป็น 0 ก่อน)</div>
         </div>
       `;
     }
@@ -3737,6 +3742,16 @@ function loadState() {
   try {
     const savedCols = localStorage.getItem(STORAGE_KEY_COLUMNS);
     columns = savedCols ? JSON.parse(savedCols) : [...DEFAULT_COLUMNS];
+    // Sync column titles for writing & script_review so existing cache is immediately updated
+    columns.forEach(col => {
+      if (col.id === 'writing') {
+        col.title = '2. เขียนบท & ตรวจคำผิด';
+        col.subtitle = 'เขียนบท & เช็คคำผิดให้เป็น 0 ก่อนส่งตรวจ';
+      } else if (col.id === 'script_review') {
+        col.title = '3. บทเสร็จ (รอตรวจ)';
+        col.subtitle = 'หัวหน้า QC ตรวจความถูกต้องของบท';
+      }
+    });
   } catch (e) {
     columns = [...DEFAULT_COLUMNS];
   }
